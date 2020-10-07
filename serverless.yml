@@ -1,0 +1,38 @@
+# name of the serverless service
+service: radon-function-lib
+
+# version of serverless framework to use
+frameworkVersion: '2'
+
+# configure the AWS provider
+provider:
+  name: aws
+  runtime: python3.8
+  stage: dev
+  region: eu-north-1
+
+package:
+  # allows for individual dependencies for each function
+  individually: true
+
+functions:
+
+  snyk_test:
+    timeout: 30
+    handler: snyk_test.handler
+    module: functions/snyk_test
+    environment:
+      # token to access the snyk api
+      SNYK_TOKEN: ${env:SNYK_TOKEN}
+
+  snyk_report:
+    handler: snyk_report.handler
+    module: functions/snyk_report
+
+custom:
+  pythonRequirements:
+    # if not building from linux, use docker to build python dependencies
+    dockerizePip: non-linux
+
+plugins:
+  - serverless-python-requirements
