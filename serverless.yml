@@ -23,11 +23,7 @@ functions:
     module: functions/snyk_test
     environment:
       # token to access the snyk api
-      SNYK_TOKEN: ${env:SNYK_TOKEN}
-
-  snyk_report:
-    handler: snyk_report.handler
-    module: functions/snyk_report
+      SNYK_API_KEY: ${env:SNYK_API_KEY}
 
 custom:
   pythonRequirements:
