@@ -17,7 +17,7 @@ CLOUDSTASH_DOWNLOAD_ENDPOINT = os.getenv("CLOUDSTASH_DOWNLOAD_ENDPOINT", "artifa
 # the unique identifier for this invocation, used to create a unique directory to store temporary files
 #  INVOCATION_UUID = uuid.uuid4()
 # TODO change back after debug
-INVOCATION_UUID = "ed0de8dc-0309-402d-ad2e-c9b82b4c11a6"
+INVOCATION_UUID = "89b06c97-a6c4-45fa-8932-5d40ceec5e47"
 # prefix for error messages:
 ERROR_PREFIX = "ERROR:"
 # the temporary directory the artifact will be downloaded to
@@ -27,21 +27,19 @@ ARTIFACT_EXTRACT_LOCATION = f"{ARTIFACT_DOWNLOAD_LOCATION}/extracted"
 # the absolute path of the downloaded artifact zip file
 ARTIFACT_ZIP_FILE = f"{ARTIFACT_DOWNLOAD_LOCATION}/artifact.zip"
 # the default output format to use if none is specified
-DEFUALT_FORMAT = "human"
+DEFAULT_OUTPUT_FORMAT = "full"
 
 
 def handler(event, context):
 
     # parse parameters and load envrironment variables
-    param_error, snyk_api_key, artifact_url = parse_parameters(params=event)
-
+    param_error, snyk_api_key, artifact_url, artifact_id, output_format = parse_parameters(params=event)
     if param_error:
         return param_error
 
     # create the snyk org object to test files with
     # also verifies that the api key is valid
     org_error, snyk_org = get_snyk_org(snyk_api_key=snyk_api_key)
-
     if org_error:
         return org_error
 
@@ -53,37 +51,33 @@ def handler(event, context):
     #  return artifact_download_error
 
     # what runtime does the function use?
-    runtime_interpolation_error, runtime = interpolate_function_runtime()
-
+    runtime_interpolation_error, runtime = interpolate_function_runtime(artifact_id=artifact_id)
     if runtime_interpolation_error:
         return runtime_interpolation_error
 
+    # vulnerabilities will be a list of snyk.api_response.issues.vulnerabilities
+    # if any vulnerabilities are found, otherwise will be an empty list
     test_error, vulnerabilities = test_dependencies_for_vulnerabilities(
         runtime=runtime, artifact_location=ARTIFACT_EXTRACT_LOCATION, snyk_org=snyk_org
     )
-
     if test_error:
         return test_error
 
-    # TODO should be parsed from paramter
-    output_format = "human"
+    # only attempt to format if there are any vulnerabilitues
+    body = None
+    if vulnerabilities:
+        format_error, formatted_vulnerabilities = format_vulnerabilities(
+            output_format=output_format, vulnerabilities=vulnerabilities
+        )
+        if format_error:
+            return format_error
+        if formatted_vulnerabilities:
+            body = json.dumps(formatted_vulnerabilities)
+    else:
+        body = "No vulnerabilities found."
 
-    format_error, formatted_vulnerabilities = format_vulnerabilities(
-        output_format=output_format, vulnerabilities=vulnerabilities
-    )
-
-    if format_error:
-        return format_error
-
-    # TODO finish
-    # the body containing response data
-    body = {}
-    body = vulnerabilities
-    #  body["vulnerabilities"] = vulnerabilities
     # build the response
-    jsonified_body = json.dumps(body)
-    response = {"statusCode": 200, "body": jsonified_body}
-    #  response = {"statusCode": 200, "body": body}
+    response = {"statusCode": 200, "body": body}
 
     return response
 
@@ -94,17 +88,16 @@ def format_vulnerabilities(output_format: str, vulnerabilities: list) -> (str, l
 
     if output_format == "human":
         for vuln in vulnerabilities:
+            # parse a selection of fields and label for humans to read
             human_readable_vuln = {
-                vuln.title: {
-                    "Title": vuln.title,
-                    "Snyk ID": vuln.id,
-                    "Snyk URL": vuln.url,
-                    "Package": vuln.package,
-                    "Package Version": vuln.version,
-                    "Severity": vuln.severity,
-                    "CVSS Score": vuln.cvssScore,
-                    "Description": vuln.description,
-                }
+                "Title": vuln.title,
+                "Snyk ID": vuln.id,
+                "Snyk URL": vuln.url,
+                "Package": f"{vuln.package}:{vuln.version}",
+                "Severity": vuln.severity,
+                "CVSS Score": vuln.cvssScore,
+                "CVE": vuln.identifiers,
+                "Description": vuln.description,
             }
             formatted_vulnerabilities.append(human_readable_vuln)
     elif output_format == "full":
@@ -145,13 +138,27 @@ def create_dependency_tester(
     return error, tester
 
 
-def interpolate_function_runtime() -> (str, str):
+def interpolate_function_runtime(artifact_id: str) -> (str, str):
     # TODO this function should interpolate what runtime the function uses
     # either by inspecting the files in the extracted zip file
     # or by queriying cloudstash for metadata about the artifact,
     # which seems to include the runtime under 'groupId'
     error = None
-    runtime = "python"
+    runtime = None
+
+    cloudstash_url = f"https://cloudstash.io/artifact/{artifact_id}"
+    response = requests.get(cloudstash_url)
+    if response.status_code == 200:
+        groupid = response.json()["groupId"]
+    else:
+        error = f"{ERROR_PREFIX} could not get cloudstash artifact metadata, make sure that the artifact id is correct."
+
+    # TODO add more runtimes to be interpolated
+    if "python" in groupid:
+        runtime = "python"
+    if "node" in groupid:
+        runtime = "node"
+
     return error, runtime
 
 
@@ -186,6 +193,7 @@ def get_artifact(url: str) -> str:
 
 def get_snyk_org(snyk_api_key: str) -> (str, str):
     error = None
+    org = None
     # create the snyk client
     try:
         client = snyk.SnykClient(snyk_api_key)
@@ -209,28 +217,44 @@ def parse_parameters(params: dict) -> (str, str, str):
         error = f"{ERROR_PREFIX} Could not find a Snyk API key, please set the 'SNYK_API_KEY' environment variable, or pass the API key as an argument: 'snyk_api_key':<api_key>."
 
     if "artifact_url" in params:
-        artifact_url = params["artifact_url"]
+        url = params["artifact_url"]
+        artifact_url = url
+        # if url ends on / remove it, to make parsing the id easier
+        if url[len(url) - 1] == "/":
+            url = url[:-1]
+        _, artifact_id = os.path.split(url)
     elif "artifact_id" in params:
         artifact_url = f"{CLOUDSTASH_HOSTNAME}/{CLOUDSTASH_DOWNLOAD_ENDPOINT}/{params['artifact_id']}"
+        artifact_id = params["artifact_id"]
     else:
         artifact_url = None
+        artifact_id = None
         error = f"{ERROR_PREFIX} No URL was provided for a CloudStash artifact, you must provide either a url as 'artifact_url':'<url>' or the CloudStash artifact ID as 'artifact_id':'<id>'"
 
-    return error, snyk_api_key, artifact_url
+    # parse the ourput format to return data in
+    if "output_format" in params:
+        of = params["output_format"]
+        if of == "human" or of == "full":
+            output_format = params["output_format"]
+        else:
+            error = f"{ERROR_PREFIX} Invalid output format, must one of 'human', 'full'."
+    else:
+        output_format = DEFAULT_OUTPUT_FORMAT
+
+    return error, snyk_api_key, artifact_url, artifact_id, output_format
 
 
+# test the code locally
+# will only be run if called from cli
 if __name__ == "__main__":
+    from pprint import pprint
+
     test_event = {}
     # test cases
-    #  test_json_file = "test_artifact_url_with_api_key.json"
-    #  test_json_file = "test_artifact_url.json"
-    test_json_file = "test_artifact_id.json"
+    test_json_file = "tests/test_artifact_url.json"
+    #  test_json_file = "tests/test_artifact_id.json"
     with open(test_json_file) as test_json:
         test_event = json.load(test_json)
     test_context = {}
     test_res = handler(test_event, test_context)
-    #  print(json.dumps(test_res))
-    print(test_res)
-    #  from pprint import pprint
-
-    #  pprint(test_res)
+    pprint(json.loads(test_res["body"]))

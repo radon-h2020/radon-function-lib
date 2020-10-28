@@ -2,6 +2,7 @@
 from abc import ABC, abstractmethod
 import os
 import snyk
+import glob
 
 # prefix for error messages:
 ERROR_PREFIX = "ERROR:"
@@ -10,7 +11,7 @@ ERROR_PREFIX = "ERROR:"
 class AbstractDependencyTester(ABC):
     @abstractmethod
     def __init__(self, snyk_org: snyk.client.Organization) -> None:
-        self.org = snyk_org
+        self.snyk_org = snyk_org
 
     @abstractmethod
     def test(self, artifact_location: str) -> (str, list):
@@ -22,23 +23,31 @@ class PythonDenpendencyTester(AbstractDependencyTester):
         self.snyk_org = snyk_org
 
     def test(self, artifact_location: str) -> (str, list):
+        # tests python dependency files, returns a list of vulnerabilities
+        # returns an empty list if no vulnerabilities are found
         error = None
         vulns = []
 
-        artifact_files = os.listdir(artifact_location)
+        # check if artifact contains a pip requirements file
+        # requirements.txt should be in the root, but if it is in a sub directory
+        # we search for it recursively..
+        pip_file = (
+            None
+            if not glob.glob(pathname=f"{artifact_location}/**/requirements.txt", recursive=True)
+            else glob.glob(pathname=f"{artifact_location}/**/requirements.txt", recursive=True)[0]
+        )
 
-        if "requirements.txt" in artifact_files:
-            pip_file = f"{artifact_location}/requirements.txt"
-            with open(pip_file) as pf:
+        if pip_file:
+            with open(pip_file, "r") as pf:
                 try:
-                    api_response = self.snyk_org.test_pipfile(pf.read())
-                    vulns = api_response.issues.vulnerabilities
+                    api_response = self.snyk_org.test_pipfile(pf)
+                    if api_response.issues.vulnerabilities:
+                        vulns = api_response.issues.vulnerabilities
                 except Exception:
                     error = f"{ERROR_PREFIX} There was an error getting the vulnerabilities for the artifact."
-            return error, vulns
 
-        # TODO case where using .dist-info folder names to get packages and versions
-        # TODO case where there are no vulnerabilities
+        else:
+            error = f"{ERROR_PREFIX} No requirements.txt file could be found, please include it in the root of the function archive."
 
         return error, vulns
 
@@ -46,7 +55,7 @@ class PythonDenpendencyTester(AbstractDependencyTester):
 class NodeJSDenpendencyTester(AbstractDependencyTester):
     # TODO implement
     def __init__(self, snyk_org: snyk.client.Organization) -> None:
-        self.org = snyk_org
+        self.snyk_org = snyk_org
 
     def test(self, artifact_location: str) -> (str, list):
-        pass
+        raise NotImplementedError()
