@@ -15,9 +15,7 @@ CLOUDSTASH_HOSTNAME = os.getenv("CLOUDSTASH_HOSTNAME", "https://cloudstash.io")
 # the endpoint from where to download artifacts
 CLOUDSTASH_DOWNLOAD_ENDPOINT = os.getenv("CLOUDSTASH_DOWNLOAD_ENDPOINT", "artifact_download")
 # the unique identifier for this invocation, used to create a unique directory to store temporary files
-#  INVOCATION_UUID = uuid.uuid4()
-# TODO change back after debug
-INVOCATION_UUID = "89b06c97-a6c4-45fa-8932-5d40ceec5e47"
+INVOCATION_UUID = uuid.uuid4()
 # prefix for error messages:
 ERROR_PREFIX = "ERROR:"
 # the temporary directory the artifact will be downloaded to
@@ -44,14 +42,12 @@ def handler(event, context):
         return org_error
 
     # download the artifact zip file into a directory /tmp/<inovocation uuid>/artifact.zip
-    # TODO reenable
-    #  artifact_download_error = get_artifact(url=artifact_url)
-
-    #  if artifact_download_error:
-    #  return artifact_download_error
+    artifact_download_error = get_artifact(url=artifact_url)
+    if artifact_download_error:
+        return artifact_download_error
 
     # what runtime does the function use?
-    runtime_interpolation_error, runtime = interpolate_function_runtime(artifact_id=artifact_id)
+    runtime_interpolation_error, runtime = get_function_runtime(artifact_id=artifact_id)
     if runtime_interpolation_error:
         return runtime_interpolation_error
 
@@ -138,11 +134,8 @@ def create_dependency_tester(
     return error, tester
 
 
-def interpolate_function_runtime(artifact_id: str) -> (str, str):
-    # TODO this function should interpolate what runtime the function uses
-    # either by inspecting the files in the extracted zip file
-    # or by queriying cloudstash for metadata about the artifact,
-    # which seems to include the runtime under 'groupId'
+def get_function_runtime(artifact_id: str) -> (str, str):
+    # query the cloudstash artifact for it's runtime
     error = None
     runtime = None
 
@@ -251,8 +244,9 @@ if __name__ == "__main__":
 
     test_event = {}
     # test cases
-    test_json_file = "tests/test_artifact_url.json"
-    #  test_json_file = "tests/test_artifact_id.json"
+    #  test_json_file = "tests/test_artifact_url_vulnerable.json"
+    #  test_json_file = "tests/test_artifact_id_vulnerable.json"
+    test_json_file = "tests/test_artifact_id_no_vulnerabilities.json"
     with open(test_json_file) as test_json:
         test_event = json.load(test_json)
     test_context = {}
