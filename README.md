@@ -17,7 +17,8 @@ The function accepts the following arguments:
 
 The function will return a list of vulnerabilities if any are found, or string indicating that no vulnerabilities were found.
 
-Currently `python` and `node` runtimes are supported. In order to test a function artifact, it's corresponding dependecy configuration file must be included in the root of the artifact .zip file. valid filename are:
+Currently `python` and `node` runtimes are supported. In order to test a function artifact, it's corresponding dependecy configuration file must be included in the root of the artifact .zip file.
+Valid filename are:
 - `requirements.txt` - for the `python` runtime.
 - `package.json` - for the `node` runtime.
 
@@ -26,3 +27,7 @@ Currently `python` and `node` runtimes are supported. In order to test a functio
 There are a number of function artifacts located in `functions/snyk_test/test_artifacts`, that can be used to test function.
 Each test case is expressed in a .json file in `functions/snyk_test/tests` and can be tested by running `sls invoke -f snyk_test -p functions/snyk_test/tests/<test file>`.
 The script `test.sh` automates this.
+
+### Adding support for more runtimes
+
+Support for more runtimes can be added by adding a corresponding class in the file `functions/snyk_test/dependency_tester.py`, which implmentes the method `test()`, which will use the python snyk api to test that specific runtimes dependecy configuration file.
