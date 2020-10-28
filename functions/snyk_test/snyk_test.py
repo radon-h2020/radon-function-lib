@@ -68,7 +68,7 @@ def handler(event, context):
         if format_error:
             return format_error
         if formatted_vulnerabilities:
-            body = json.dumps(formatted_vulnerabilities)
+            body = formatted_vulnerabilities
     else:
         body = "No vulnerabilities found."
 
