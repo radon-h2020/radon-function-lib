@@ -124,7 +124,7 @@ def create_dependency_tester(
     tester = None
     if runtime == "python":
         tester = dependency_tester.PythonDenpendencyTester(snyk_org=snyk_org)
-    elif runtime == "nodejs":
+    elif runtime == "node":
         tester = dependency_tester.NodeJSDenpendencyTester(snyk_org=snyk_org)
     # TODO implement other available testers
     # as are specified on the pysnyk github page:
@@ -146,7 +146,7 @@ def get_function_runtime(artifact_id: str) -> (str, str):
     else:
         error = f"{ERROR_PREFIX} could not get cloudstash artifact metadata, make sure that the artifact id is correct."
 
-    # TODO add more runtimes to be interpolated
+    # TODO add more runtimes
     if "python" in groupid:
         runtime = "python"
     if "node" in groupid:
@@ -246,9 +246,12 @@ if __name__ == "__main__":
     # test cases
     #  test_json_file = "tests/test_artifact_url_vulnerable.json"
     #  test_json_file = "tests/test_artifact_id_vulnerable.json"
-    test_json_file = "tests/test_artifact_id_no_vulnerabilities.json"
+    #  test_json_file = "tests/test_artifact_id_no_vulnerabilities.json"
+    test_json_file = "tests/node_test_artifact_vulns.json"
+    #  test_json_file = "tests/node_test_artifact_no_vulns.json"
     with open(test_json_file) as test_json:
         test_event = json.load(test_json)
     test_context = {}
     test_res = handler(test_event, test_context)
-    pprint(json.loads(test_res["body"]))
+    #  pprint(json.loads(test_res["body"]))
+    print(test_res)

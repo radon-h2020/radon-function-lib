@@ -1,0 +1,8 @@
+{
+  "name": "vulnerability-node-test",
+  "description": "",
+  "version": "0.1.0",
+  "dependencies": {
+    "nodemon": "1.0.0"
+  }
+}
