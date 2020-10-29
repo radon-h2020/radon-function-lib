@@ -2,10 +2,13 @@
 import json
 import uuid
 import os
+import glob
+import zipfile
+from typing import Callable
 import snyk
 import requests
-import zipfile
-import dependency_tester
+
+#  import dependency_tester
 
 # This lambda function takes a cloudstash.io function artifact and
 # returns a list of vulnerabilities in the codes/dependencies as reported by snyk
@@ -112,32 +115,69 @@ def format_vulnerabilities(output_format: str, vulnerabilities: list) -> (str, l
     return error, formatted_vulnerabilities
 
 
-def test_dependencies_for_vulnerabilities(
-    runtime: str, artifact_location: str, snyk_org: snyk.client.Organization
+def test_dependency_file(
+    snyk_org: snyk.client.Organization,
+    snyk_test_func: Callable[[str], list],
+    dependency_file_name: str,
+    artifact_location: str,
 ) -> (str, list):
     error = None
-    # polymorhic tester, does different tests depending on the runtime and project type
-    error, tester = create_dependency_tester(runtime=runtime, snyk_org=snyk_org)
-    if error:
-        return error, None
-    return tester.test(artifact_location=artifact_location)
+    vulns = []
 
+    # use glob to recursively find the path to the dependency file if it is not in the root
+    dependency_file = (
+        None
+        if not glob.glob(pathname=f"{artifact_location}/**/{dependency_file_name}", recursive=True)
+        else glob.glob(pathname=f"{artifact_location}/**/{dependency_file_name}", recursive=True)[0]
+    )
 
-def create_dependency_tester(
-    runtime: str, snyk_org: snyk.client.Organization
-) -> (str, dependency_tester.AbstractDependencyTester):
-    error = None
-    tester = None
-    if runtime == "python":
-        tester = dependency_tester.PythonDenpendencyTester(snyk_org=snyk_org)
-    elif runtime == "node":
-        tester = dependency_tester.NodeJSDenpendencyTester(snyk_org=snyk_org)
-    # TODO implement other available testers
-    # as are specified on the pysnyk github page:
-    # https://github.com/snyk-labs/pysnyk
+    if dependency_file:
+        with open(dependency_file, "r") as df:
+            try:
+                # use the snyk test function supplied
+                api_response = snyk_org.snyk_test_func(df)
+                if api_response.issues.vulnerabilities:
+                    vulns = api_response.issues.vulnerabilities
+            except Exception:
+                error = f"{ERROR_PREFIX} There was an error getting the vulnerabilities for the artifact."
     else:
-        error = f"{ERROR_PREFIX} The runtime: {runtime} is not supported."
-    return error, tester
+        error = f"{ERROR_PREFIX} No {dependency_file_name} file could be found, please include it in the root of the function archive."
+
+    return error, vulns
+
+
+def test_dependencies_for_vulnerabilities(runtime: str, artifact_location: str, snyk_org: snyk.client) -> (str, list):
+    error = None
+    # polymorhic tester, does different tests depending on the runtime and project type
+    #  error, tester = create_dependency_tester(runtime=runtime, snyk_org=snyk_org)
+    #  if error:
+    #  return error, None
+    #  return tester.test(artifact_location=artifact_location)
+
+    if "runtime" == "python":
+        return test_dependency_file(
+            snyk_org=snyk_org,
+            snyk_test_func=snyk.client.Organizaton.test_pipfile,
+            dependency_file_name="requirements.txt",
+            artifact_location=artifact_location,
+        )
+
+
+#  def create_dependency_tester(
+#  runtime: str, snyk_org: snyk.client.Organization
+#  ) -> (str, dependency_tester.AbstractDependencyTester):
+#  error = None
+#  tester = None
+#  if runtime == "python":
+#  tester = dependency_tester.PythonDenpendencyTester(snyk_org=snyk_org)
+#  elif runtime == "node":
+#  tester = dependency_tester.NodeJSDenpendencyTester(snyk_org=snyk_org)
+#  # TODO implement other available testers
+#  # as are specified on the pysnyk github page:
+#  # https://github.com/snyk-labs/pysnyk
+#  else:
+#  error = f"{ERROR_PREFIX} The runtime: {runtime} is not supported."
+#  return error, tester
 
 
 def get_function_runtime(artifact_id: str) -> (str, str):
@@ -250,10 +290,10 @@ if __name__ == "__main__":
 
     test_event = {}
     # test cases
-    #  test_json_file = "tests/test_artifact_url_vulnerable.json"
+    test_json_file = "tests/test_artifact_url_vulnerable.json"
     #  test_json_file = "tests/test_artifact_id_vulnerable.json"
     #  test_json_file = "tests/test_artifact_id_no_vulnerabilities.json"
-    test_json_file = "tests/node_test_artifact_vulns.json"
+    #  test_json_file = "tests/node_test_artifact_vulns.json"
     #  test_json_file = "tests/node_test_artifact_no_vulns.json"
     with open(test_json_file) as test_json:
         test_event = json.load(test_json)
