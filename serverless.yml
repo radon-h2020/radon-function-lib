@@ -18,9 +18,13 @@ package:
 functions:
 
   snyk_test:
-    timeout: 30
+    timeout: 29
     handler: snyk_test.handler
     module: functions/snyk_test
+    events:
+      - http:
+          path: snyk-test
+          method: post
     environment:
       # token to access the snyk api
       SNYK_API_KEY: ${env:SNYK_API_KEY}

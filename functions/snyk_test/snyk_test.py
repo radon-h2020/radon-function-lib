@@ -30,8 +30,14 @@ DEFAULT_OUTPUT_FORMAT = "full"
 
 def handler(event, context):
 
+    if "body" in event:
+        # the API gateway will wrap the request body, so we must parse it
+        parameters = json.loads(event["body"])
+    else:
+        parameters = event
+
     # parse parameters and load envrironment variables
-    param_error, snyk_api_key, artifact_url, artifact_id, output_format = parse_parameters(params=event)
+    param_error, snyk_api_key, artifact_url, artifact_id, output_format = parse_parameters(params=parameters)
     if param_error:
         return param_error
 
@@ -73,7 +79,7 @@ def handler(event, context):
         body = "No vulnerabilities found."
 
     # build the response
-    response = {"statusCode": 200, "body": body}
+    response = {"statusCode": 200, "body": json.dumps(body)}
 
     return response
 
@@ -204,7 +210,7 @@ def parse_parameters(params: dict) -> (str, str, str):
     error = None
 
     # load snyk api token from environment if it is not provided
-    snyk_api_key = params["snyk_api_key"] if "snyk_api_key" in params else os.getenv("SNYK_API_KEY")
+    snyk_api_key = params["body"]["snyk_api_key"] if "snyk_api_key" in params else os.getenv("SNYK_API_KEY")
     # if api key is not set, return error
     if snyk_api_key is None:
         error = f"{ERROR_PREFIX} Could not find a Snyk API key, please set the 'SNYK_API_KEY' environment variable, or pass the API key as an argument: 'snyk_api_key':<api_key>."
