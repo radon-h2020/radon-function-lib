@@ -29,6 +29,15 @@ functions:
       # token to access the snyk api
       SNYK_API_KEY: ${env:SNYK_API_KEY}
 
+  secrets_scanner:
+    handler: secrets_scanner.handler
+    module: functions/secrets_scanner
+    timeout: 6
+    events:
+      - http:
+          path: secrets-scanner
+          method: post
+
 custom:
   pythonRequirements:
     # if not building from linux, use docker to build python dependencies
