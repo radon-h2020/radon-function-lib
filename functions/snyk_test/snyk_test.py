@@ -159,6 +159,7 @@ def test_dependencies_for_vulnerabilities(runtime: str, artifact_location: str, 
             dependency_file_name="package.json",
             artifact_location=artifact_location,
         )
+    return (f"{ERROR_PREFIX} runtime is not supported.", None)
 
 
 def get_function_runtime(artifact_id: str) -> (str, str):

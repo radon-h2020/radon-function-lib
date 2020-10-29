@@ -9,7 +9,7 @@ function msg {
 
 # test functions
 for fx in $(ls functions) ; do
-    msg "Tesging $fx ..."
+    msg "Testing $fx ..."
     for test_case in $(ls functions/$fx/tests) ; do
         msg "Testing: $fx: $test_case"
         sls invoke -f "$fx" -p "functions/$fx/tests/$test_case"
