@@ -8,8 +8,6 @@ from typing import Callable
 import snyk
 import requests
 
-#  import dependency_tester
-
 # This lambda function takes a cloudstash.io function artifact and
 # returns a list of vulnerabilities in the codes/dependencies as reported by snyk
 
@@ -116,7 +114,6 @@ def format_vulnerabilities(output_format: str, vulnerabilities: list) -> (str, l
 
 
 def test_dependency_file(
-    snyk_org: snyk.client.Organization,
     snyk_test_func: Callable[[str], list],
     dependency_file_name: str,
     artifact_location: str,
@@ -135,7 +132,7 @@ def test_dependency_file(
         with open(dependency_file, "r") as df:
             try:
                 # use the snyk test function supplied
-                api_response = snyk_org.snyk_test_func(df)
+                api_response = snyk_test_func(df)
                 if api_response.issues.vulnerabilities:
                     vulns = api_response.issues.vulnerabilities
             except Exception:
@@ -147,37 +144,21 @@ def test_dependency_file(
 
 
 def test_dependencies_for_vulnerabilities(runtime: str, artifact_location: str, snyk_org: snyk.client) -> (str, list):
-    error = None
-    # polymorhic tester, does different tests depending on the runtime and project type
-    #  error, tester = create_dependency_tester(runtime=runtime, snyk_org=snyk_org)
-    #  if error:
-    #  return error, None
-    #  return tester.test(artifact_location=artifact_location)
-
-    if "runtime" == "python":
+    # use the appropriate snyk test function based on the runtime
+    # TODO figure out some way of differentiating between runtimes with multiple
+    # dependency file types, like for java - gradle vs maven
+    if runtime == "python":
         return test_dependency_file(
-            snyk_org=snyk_org,
-            snyk_test_func=snyk.client.Organizaton.test_pipfile,
+            snyk_test_func=snyk_org.test_pipfile,
             dependency_file_name="requirements.txt",
             artifact_location=artifact_location,
         )
-
-
-#  def create_dependency_tester(
-#  runtime: str, snyk_org: snyk.client.Organization
-#  ) -> (str, dependency_tester.AbstractDependencyTester):
-#  error = None
-#  tester = None
-#  if runtime == "python":
-#  tester = dependency_tester.PythonDenpendencyTester(snyk_org=snyk_org)
-#  elif runtime == "node":
-#  tester = dependency_tester.NodeJSDenpendencyTester(snyk_org=snyk_org)
-#  # TODO implement other available testers
-#  # as are specified on the pysnyk github page:
-#  # https://github.com/snyk-labs/pysnyk
-#  else:
-#  error = f"{ERROR_PREFIX} The runtime: {runtime} is not supported."
-#  return error, tester
+    if runtime == "node":
+        return test_dependency_file(
+            snyk_test_func=snyk_org.test_packagejson,
+            dependency_file_name="package.json",
+            artifact_location=artifact_location,
+        )
 
 
 def get_function_runtime(artifact_id: str) -> (str, str):
