@@ -152,8 +152,8 @@ if __name__ == "__main__":
 
     test_event = {}
     # test cases
-    test_json_file = "tests/artifact_no_secrets.json"
-    #  test_json_file = "tests/artifact_with_secrets.json"
+    #  test_json_file = "tests/artifact_no_secrets.json"
+    test_json_file = "tests/artifact_with_secrets.json"
     with open(test_json_file) as test_json:
         test_event = json.load(test_json)
     test_context = {}

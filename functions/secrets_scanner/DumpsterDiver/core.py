@@ -275,11 +275,22 @@ def start_the_hunt():
     queue = multiprocessing.Manager().Queue()
     result = multiprocessing.Manager().Queue()
 
-    if os.path.isfile(PATH):
-        file_reader(PATH, queue)
-    else:
-        folder_reader(PATH, queue)
-    mp_handler(queue, result)
+    # AWS lambda is most likely single-threaded, so we remove all of the concurrent complexity
+    # the below code causes something to crash at the end of a run, even though the result seems
+    # to be correct...
+
+    #  if os.path.isfile(PATH):
+    #  file_reader(PATH, queue)
+    #  else:
+    #  folder_reader(PATH, queue)
+    #  mp_handler(queue, result)
+
+    folder_reader(PATH, queue)
+
+    #  bastarized sequential, single threaded analyzing...
+    while not queue.empty():
+        _file = queue.get()
+        analyze_file(_file, result)
 
     # do not save to file
     #  save_output(result)
