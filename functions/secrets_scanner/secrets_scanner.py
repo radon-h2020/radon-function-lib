@@ -1,4 +1,4 @@
-# this python program was written using python 3.8.6
+# this python program was written using python 3.6.5
 import json
 import uuid
 import os
@@ -7,8 +7,11 @@ import zipfile
 from typing import Callable
 import requests
 
+#  import DumpsterDiver
+from DumpsterDiver import DumpsterDiver, core, advancedSearch
+
 # This lambda function takes a cloudstash.io function artifact and
-# and scans all of the files for secrets/credentials/token/keys
+# and scans all of the files for secrets/credentials/tokens/keys
 
 # either get the hostname from env variable, or use the default
 CLOUDSTASH_HOSTNAME = os.getenv("CLOUDSTASH_HOSTNAME", "https://cloudstash.io")
@@ -46,19 +49,15 @@ def handler(event, context):
     if artifact_download_error:
         return artifact_download_error
 
-    scan_errors, scan_result = scan_for_secrets()
+    scan_error, scan_result = scan_for_secrets()
+
+    if scan_error:
+        return scan_error
 
     # only attempt to format if there are any vulnerabilitues
     body = None
     if scan_result:
-        #  format_error, formatted_vulnerabilities = format_vulnerabilities(
-        #  output_format=output_format, vulnerabilities=vulnerabilities
-        #  )
-        #  if format_error:
-        #  return format_error
-        #  if formatted_vulnerabilities:
-        #  body = formatted_vulnerabilities
-        body = {}
+        body = scan_result
     else:
         body = "No vulnerabilities found."
 
@@ -69,7 +68,19 @@ def handler(event, context):
 
 
 def scan_for_secrets():
-    pass
+    error = None
+    result = []
+
+    # set path to files to scan
+    DumpsterDiver.core.PATH = os.path.abspath(ARTIFACT_EXTRACT_LOCATION)
+
+    try:
+        # do the scan
+        result = DumpsterDiver.core.start_the_hunt()
+    except RuntimeError:
+        error = f"{ERROR_PREFIX} There was as an error scanning the artifact for secrets."
+
+    return error, result
 
 
 def get_artifact(url: str) -> str:
@@ -141,10 +152,12 @@ if __name__ == "__main__":
 
     test_event = {}
     # test cases
-    test_json_file = ""
+    test_json_file = "tests/artifact_no_secrets.json"
+    #  test_json_file = "tests/artifact_with_secrets.json"
     with open(test_json_file) as test_json:
         test_event = json.load(test_json)
     test_context = {}
     test_res = handler(test_event, test_context)
-    #  pprint(json.loads(test_res["body"]))
-    print(test_res)
+    pprint(json.loads(test_res["body"]))
+    #  print(test_res)
+    #  pprint(test_res)
