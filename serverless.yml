@@ -32,6 +32,7 @@ functions:
   secrets_scanner:
     handler: secrets_scanner.handler
     module: functions/secrets_scanner
+    runtime: python3.6
     timeout: 6
     events:
       - http:
