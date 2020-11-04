@@ -15,3 +15,4 @@ echo "--> Uploading function to cloudstash.io ..."
 fuhub --token=$cloudstash_token upload "$zip_file"
 
 echo "--> Removing .zip file"
+rm "$zip_file"
