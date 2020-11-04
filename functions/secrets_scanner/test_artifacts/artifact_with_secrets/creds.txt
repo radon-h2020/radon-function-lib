@@ -1,0 +1,4 @@
+# azure login
+account = "foobar"
+key = "M3mmbjOlIZr11OZoULqUWyFA1EpOdZAEcmaC64E/Ft9MRfDEYE7qDJm+9ezGQY15=="
+container = "assets"
