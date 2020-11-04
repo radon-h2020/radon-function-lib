@@ -27,8 +27,6 @@ ARTIFACT_DOWNLOAD_LOCATION = f"/tmp/artifact_{INVOCATION_UUID}"
 ARTIFACT_EXTRACT_LOCATION = f"{ARTIFACT_DOWNLOAD_LOCATION}/extracted"
 # the absolute path of the downloaded artifact zip file
 ARTIFACT_ZIP_FILE = f"{ARTIFACT_DOWNLOAD_LOCATION}/artifact.zip"
-# the default output format to use if none is specified
-DEFAULT_OUTPUT_FORMAT = "full"
 
 
 def handler(event, context):
@@ -40,7 +38,7 @@ def handler(event, context):
         parameters = event
 
     # parse parameters and load envrironment variables
-    param_error, artifact_url, artifact_id, output_format = parse_parameters(params=parameters)
+    param_error, artifact_url, artifact_id = parse_parameters(params=parameters)
     if param_error:
         return param_error
 
@@ -132,17 +130,7 @@ def parse_parameters(params: dict) -> (str, str, str):
         artifact_id = None
         error = f"{ERROR_PREFIX} No URL was provided for a CloudStash artifact, you must provide either a url as 'artifact_url':'<url>' or the CloudStash artifact ID as 'artifact_id':'<id>'"
 
-    # parse the ourput format to return data in
-    if "output_format" in params:
-        of = params["output_format"]
-        if of == "human" or of == "full":
-            output_format = params["output_format"]
-        else:
-            error = f"{ERROR_PREFIX} Invalid output format, must one of 'human', 'full'."
-    else:
-        output_format = DEFAULT_OUTPUT_FORMAT
-
-    return error, artifact_url, artifact_id, output_format
+    return error, artifact_url, artifact_id
 
 
 # test the code locally
