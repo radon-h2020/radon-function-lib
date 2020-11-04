@@ -67,7 +67,7 @@ def handler(event, context):
     return response
 
 
-def scan_for_secrets():
+def scan_for_secrets() -> (str, list):
     error = None
     result = []
 
