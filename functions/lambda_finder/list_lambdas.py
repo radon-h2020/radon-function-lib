@@ -23,9 +23,7 @@
 # list_lambas by Epsagon, modified by zanderhavgaard
 # https://github.com/epsagon/list-lambdas
 
-"""
-Enumerates Lambda functions from every region with interesting metadata
-"""
+#  Enumerates Lambda functions from every region with interesting metadata
 
 from __future__ import print_function
 from datetime import datetime
@@ -34,8 +32,6 @@ import codecs
 import boto3
 from boto3.session import Session
 from botocore.exceptions import ClientError
-from terminaltables import AsciiTable
-import progressbar
 
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
 BYTE_TO_MB = 1024.0 * 1024.0
@@ -76,18 +72,26 @@ def init_boto_client(client_name, region, args):
     :param args: arguments
     :return: Client
     """
-    if args.token_key_id and args.token_secret:
-        boto_client = boto3.client(
-            client_name,
-            aws_access_key_id=args.token_key_id,
-            aws_secret_access_key=args.token_secret,
-            region_name=region,
-        )
-    elif args.profile:
-        session = boto3.session.Session(profile_name=args.profile)
-        boto_client = session.client(client_name, region_name=region)
-    else:
-        boto_client = boto3.client(client_name, region_name=region)
+    #  if args.token_key_id and args.token_secret:
+    #  boto_client = boto3.client(
+    #  client_name,
+    #  aws_access_key_id=args.token_key_id,
+    #  aws_secret_access_key=args.token_secret,
+    #  region_name=region,
+    #  )
+    #  elif args.profile:
+    #  session = boto3.session.Session(profile_name=args.profile)
+    #  boto_client = session.client(client_name, region_name=region)
+    #  else:
+    #  boto_client = boto3.client(client_name, region_name=region)
+
+    # TODO fix
+    boto_client = boto3.client(
+        client_name,
+        aws_access_key_id=args.token_key_id,
+        aws_secret_access_key=args.token_secret,
+        region_name=region,
+    )
 
     return boto_client
 
@@ -137,31 +141,27 @@ def get_last_invocation(region, args, function_name):
 
 
 def format_lambda_data(lambdas_data, args):
-
-    lambda_data = []
+    formatted_data = []
     for lambda_data in lambdas_data:
         function_data = lambda_data["function-data"]
         last_invocation = "N/A (no invocations?)"
-
         if lambda_data["last-invocation"] != -1:
             last_invocation = get_days_ago(datetime.fromtimestamp(lambda_data["last-invocation"] / 1000))
-
-        lambda_data.append(
-            # let's make a dict instead!
+        formatted_data.append(
             {
                 "region": lambda_data["region"],
                 "function_name": str(function_data["FunctionName"]),
-                #  str(function_data["MemorySize"]),
-                #  "%.2f" % (function_data["CodeSize"] / BYTE_TO_MB),
-                #  str(function_data["Timeout"]),
+                "function_memory": str(function_data["MemorySize"]),
+                "function_size": "%.2f" % (function_data["CodeSize"] / BYTE_TO_MB),
+                "function_timeout": str(function_data["Timeout"]),
                 "runtime": str(function_data["Runtime"]),
-                #  function_data["Description"],
+                "function_description": function_data["Description"],
                 "last_invocation": get_days_ago(lambda_data["last-modified"]),
                 "num_invocations": last_invocation,
             }
         )
 
-    return lambda_data
+    return formatted_data
 
 
 def print_lambda_list(args):
@@ -170,21 +170,15 @@ def print_lambda_list(args):
     :return: None
     """
     regions = list_available_lambda_regions()
-    print(regions)
 
-    #  progress_bar = progressbar.ProgressBar(max_value=len(regions))
     lambdas_data = []
-    #  for region in progress_bar(regions):
-
     for region in regions:
         lambda_client = init_boto_client("lambda", region, args)
         next_marker = None
         response = lambda_client.list_functions()
-
         while next_marker != "":
             next_marker = ""
             functions = response["Functions"]
-
             if not functions:
                 continue
 
@@ -219,76 +213,6 @@ def print_lambda_list(args):
     lambdas_data.sort(key=lambda x: x[args.sort_by])
 
     #  min_table_data, all_table_data = create_tables(lambdas_data, args)
-    all_table_data = format_lambda_data(lambdas_data, args)
+    formatted_lambda_data = format_lambda_data(lambdas_data, args)
 
-    import pprint
-
-    #  pprint.pprint(min_table_data)
-    pprint.pprint(all_table_data)
-
-    #  table = AsciiTable(min_table_data)
-    #  print(table.table)
-
-    #  if not args.csv:
-    #  return
-
-    #  with codecs.open(args.csv, "w", encoding="utf-8") as output_file:
-    #  for table_row in all_table_data:
-    #  output_line = "{0}\n".format(",".join(table_row))
-    #  output_file.writelines(output_line)
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description=("Enumerates Lambda functions from every region with " "interesting metadata.")
-    )
-
-    parser.add_argument(
-        "--all",
-        dest="should_print_all",
-        default=False,
-        action="store_true",
-        help=("Print all the information to the screen " "(default: print summarized information)."),
-    )
-    parser.add_argument("--csv", type=str, help="CSV filename to output full table data.", metavar="output_filename")
-    parser.add_argument(
-        "--token-key-id",
-        type=str,
-        help=("AWS access key id. Must provide AWS secret access key as well " "(default: from local configuration)."),
-        metavar="token-key-id",
-    )
-    parser.add_argument(
-        "--token-secret",
-        type=str,
-        help=("AWS secret access key. Must provide AWS access key id " "as well (default: from local configuration."),
-        metavar="token-secret",
-    )
-    parser.add_argument(
-        "--inactive-days-filter",
-        type=int,
-        help="Filter only Lambda functions with minimum days of inactivity.",
-        default=0,
-        metavar="minimum-inactive-days",
-    )
-    parser.add_argument(
-        "--sort-by",
-        type=str,
-        help=(
-            "Column name to sort by. Options: region, " "last-modified, last-invocation, " "runtime (default: region)."
-        ),
-        default="region",
-        metavar="sort_by",
-    )
-    parser.add_argument(
-        "--profile",
-        type=str,
-        help=("AWS profile. Optional " '(default: "default" from local configuration).'),
-        metavar="profile",
-    )
-
-    arguments = parser.parse_args()
-    if arguments.sort_by not in SORT_KEYS:
-        print("ERROR: Illegal column name: {0}.".format(arguments.sort_by))
-        exit(1)
-
-    print_lambda_list(arguments)
+    return formatted_lambda_data

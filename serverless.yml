@@ -57,7 +57,7 @@ functions:
       - http:
           path: tls-cert-checker
           method: post
-  
+
   have_i_been_pwned:
     module: functions/have_i_been_pwned
     handler: haveibeenpwned.handler
@@ -87,6 +87,23 @@ functions:
       - schedule:
           rate: cron(15 10 * * ? *)
           enabled: true
+
+  lambda_finder:
+    handler: lambda_finder.handler
+    module: functions/lambda_finder
+    timeout: 29
+    events:
+      # you can get if you have defined credentials
+      # - http:
+          # path: lambda-finder
+          # method: get
+      # you can post and provide your credentials
+      # - http:
+          # path: lambda-finder
+          # method: post
+    # environment:
+      # AWS_KEY: ${env:AWS_ACCESS_KEY}
+      # AWS_SECRET: ${env:AWS_SECRET_KEY}
 
 custom:
   pythonRequirements:

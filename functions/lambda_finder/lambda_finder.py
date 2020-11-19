@@ -1,12 +1,17 @@
 # this python program was written using python 3.8.6
+# by @zanderhavgaard
+
 import json
-import boto3
+import argparse
+import os
 
 # use list_lambas to find lambdas
 import list_lambdas
 
 
-# this lambda function ...
+# this lambda function scans all AWS regions for deployed lambda functions and returns a JSON list
+# with information about deployed lambdas
+# uses 'list-lambdas' by @epsagon: https://github.com/epsagon/list-lambdas
 
 
 def handler(event, context):
@@ -18,18 +23,24 @@ def handler(event, context):
         parameters = event
 
     # parse parameters and load envrironment variables
-    param_error = parse_parameters(params=parameters)
+    param_error, key, secret_key = parse_parameters(params=parameters)
     if param_error:
         return param_error
 
-    lambda_finder_error, found_lambdas = find_lambdas()
+    # TODO remove
+    print(key, secret_key)
 
-    # only attempt to format if there are any vulnerabilitues
+    # find lambdas
+    lambda_finder_error, found_lambdas = find_lambdas(aws_key=key, aws_secret_key=secret_key)
+    if lambda_finder_error:
+        return lambda_finder_error
+
+    # return a message if no lambdas were found
     body = None
     if found_lambdas:
         body = found_lambdas
     else:
-        body = "No vulnerabilities found."
+        body = "No lambdas found."
 
     # build the response
     response = {"statusCode": 200, "body": json.dumps(body)}
@@ -37,63 +48,25 @@ def handler(event, context):
     return response
 
 
-def find_lambdas():
+def find_lambdas(aws_key: str, aws_secret_key: str) -> (str, dict):
     error = None
+    function_data = None
 
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description=("Enumerates Lambda functions from every region with " "interesting metadata.")
-    )
-
-    parser.add_argument(
-        "--all",
-        dest="should_print_all",
-        default=False,
-        action="store_true",
-        help=("Print all the information to the screen " "(default: print summarized information)."),
-    )
-    parser.add_argument("--csv", type=str, help="CSV filename to output full table data.", metavar="output_filename")
-    parser.add_argument(
-        "--token-key-id",
-        type=str,
-        help=("AWS access key id. Must provide AWS secret access key as well " "(default: from local configuration)."),
-        metavar="token-key-id",
-    )
-    parser.add_argument(
-        "--token-secret",
-        type=str,
-        help=("AWS secret access key. Must provide AWS access key id " "as well (default: from local configuration."),
-        metavar="token-secret",
-    )
-    parser.add_argument(
-        "--inactive-days-filter",
-        type=int,
-        help="Filter only Lambda functions with minimum days of inactivity.",
-        default=0,
-        metavar="minimum-inactive-days",
-    )
-    parser.add_argument(
-        "--sort-by",
-        type=str,
-        help=(
-            "Column name to sort by. Options: region, " "last-modified, last-invocation, " "runtime (default: region)."
-        ),
-        default="region",
-        metavar="sort_by",
-    )
-    parser.add_argument(
-        "--profile",
-        type=str,
-        help=("AWS profile. Optional " '(default: "default" from local configuration).'),
-        metavar="profile",
+    arguments = argparse.Namespace(
+        csv=None,
+        inactive_days_filter=0,
+        profile=None,
+        should_print_all=False,
+        sort_by="region",
+        token_key_id=aws_key,
+        token_secret=aws_secret_key,
     )
 
-    SORT_KEYS = ["region", "last-modified", "last-invocation", "runtime"]
-    arguments = parser.parse_args()
-    if arguments.sort_by not in SORT_KEYS:
-        print("ERROR: Illegal column name: {0}.".format(arguments.sort_by))
-        exit(1)
+    # TODO uncomment
+    #  try:
+    #  function_data = list_lambdas.print_lambda_list(arguments)
+    #  except Exception:
+    #  error = f"ERROR: There was an error when getting the list of lambdas."
 
     function_data = list_lambdas.print_lambda_list(arguments)
 
@@ -105,26 +78,33 @@ def parse_parameters(params: dict) -> (str, str, str):
     # return an error string if any of the parameters are not parsed correctly, or missing
     error = None
 
-    # TODO
+    # aws key and secret key to allow to find lambdas
+    key = None
+    secret_key = None
 
-    #  if "artifact_url" in params:
-    #  url = params["artifact_url"]
-    #  artifact_url = url
-    #  # if url ends on / remove it, to make parsing the id easier
-    #  if url[len(url) - 1] == "/":
-    #  url = url[:-1]
-    #  _, artifact_id = os.path.split(url)
-    #  elif "artifact_id" in params:
-    #  artifact_url = f"{CLOUDSTASH_HOSTNAME}/{CLOUDSTASH_DOWNLOAD_ENDPOINT}/{params['artifact_id']}"
-    #  artifact_id = params["artifact_id"]
-    #  else:
-    #  artifact_url = None
-    #  artifact_id = None
-    #  error = f"{ERROR_PREFIX} No URL was provided for a CloudStash artifact, you must provide either a url as 'artifact_url':'<url>' or the CloudStash artifact ID as 'artifact_id':'<id>'"
+    if "aws_key" in params:
+        key = params["aws_key"]
+    elif "AWS_KEY" in os.environ:
+        key = os.getenv("AWS_KEY", None)
+    else:
+        return (
+            "Could not parse an aws_key, you must either set one as an environment variable or provide one with as the 'aws_key' argument.",
+            None,
+            None,
+        )
 
-    #  return error, artifact_url, artifact_id
+    if "aws_secret" in params:
+        secret_key = params["aws_secret"]
+    elif "AWS_SECRET" in os.environ:
+        secret_key = os.getenv("AWS_SECRET", None)
+    else:
+        return (
+            "Could not parse an aws_secret, you must either set one as an environment variable or provide one with as the 'aws_secret' argument.",
+            None,
+            None,
+        )
 
-    return error
+    return error, key, secret_key
 
 
 # test the code locally
@@ -139,6 +119,7 @@ if __name__ == "__main__":
     #  test_event = json.load(test_json)
     test_context = {}
     test_res = handler(test_event, test_context)
-    pprint(json.loads(test_res["body"]))
+    print(test_res)
+    #  pprint(json.loads(test_res["body"]))
     #  print(test_res)
     #  pprint(test_res)
