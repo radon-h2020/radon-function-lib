@@ -1,6 +1,44 @@
 # Radon Function Library
 
-TODO write
+This repository contains a number of serverless functions relating to log, state, cloud & security.
+
+# Deploying Functions
+
+The project comes with a `serverless framework` project to deploy the functions.
+
+Deploying the functions will require `npm` and `python/pip` to be installed.
+
+First clone this repository, then use `npm` to install `serverless` and it's dependencies:
+```sh
+npm install
+```
+
+Then use the `serverless` cli tool to deploy the stack:
+```sh
+serverless deploy
+```
+
+# Adding New Functions
+
+New functions added to the project should be placed in a directory in the `functions` directory.
+Each directory in `functions` should contain all of the code, and dependency specification, i.e. `requirements.txt` or `package.json`, for that function.
+
+The function should be added to the `serverless.yml` in order to easily deploy the function and verify that it works.
+
+Add a new key to `functions` yaml dictionary:
+```yaml
+functions:
+  ...
+  <function_name>:
+    handler: <function_name>.handler
+    module: functions/<function_name>
+  ...
+```
+
+Then use `serverless deploy` to deploy the new function.
+
+Note that the deployment uses an AWS API gateway, which has a specific way of providing JSON arguments, and requirements for how responses should be structured.
+You might want to look at how the existing functions handle this, in order to now experience API Gateway related problems.
 
 # Functions
 
@@ -30,7 +68,8 @@ The script `test.sh` automates this.
 
 ### Adding support for more runtimes
 
-Support for more runtimes can be added by adding a corresponding class in the file `functions/snyk_test/dependency_tester.py`, which implmentes the method `test()`, which will use the python snyk api to test that specific runtimes dependecy configuration file.
+Support for more runtimes can be added by using the appropriate methods of the [pysnyk](https://github.com/snyk-labs/pysnyk#testing-for-vulnerabilities) pip package to test the runtime's dependency file.
+The method `test_depdencies_for_vulnerabilities` in the file `functions/snyk_test/snyk_test.py`, contains a functional implementation that can be extended with support for new runtimes.
 
 ## secrets_scanner
 
