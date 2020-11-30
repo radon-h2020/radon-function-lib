@@ -18,6 +18,13 @@ Then use the `serverless` cli tool to deploy the stack:
 serverless deploy
 ```
 
+For convenience serverless provides the alias `sls` for the `serverless` command.
+
+You can use the `info` command to get an overview of existing resources:
+```sh
+sls info
+```
+
 # Adding New Functions
 
 New functions added to the project should be placed in a directory in the `functions` directory.
