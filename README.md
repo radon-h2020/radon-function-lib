@@ -8,7 +8,13 @@ The project comes with a `serverless framework` project to deploy the functions.
 
 Deploying the functions will require `npm` and `python/pip` to be installed.
 
-First clone this repository, then use `npm` to install `serverless` and it's dependencies:
+First install `serverless framework` globally:
+```sh
+npm install -g serverless
+```
+(Global installation might require sudo)
+
+Then clone this repository, then use `npm` to install `serverless` and it's dependencies:
 ```sh
 npm install
 ```
