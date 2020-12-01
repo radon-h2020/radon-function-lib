@@ -39,6 +39,15 @@ functions:
           path: secrets-scanner
           method: post
 
+  observatory:
+    handler: observatory.handler
+    module: functions/observatory
+    timeout: 10
+    events:
+      - http:
+          path: observatory
+          method: post
+
 custom:
   pythonRequirements:
     # if not building from linux, use docker to build python dependencies
