@@ -101,3 +101,17 @@ The function will return a list of found items (strings) that have a high entrop
 There are a number of function artifacts located in `functions/secrets_scanner/test_artifacts`, that can be used to test function.
 Each test case is expressed in a .json file in `functions/secrets_scanner/tests` and can be tested by running `sls invoke -f snyk_test -p functions/secrets_scanner/tests/<test file>`.
 The script `test.sh` automates this.
+
+## observatory
+
+This function uses Mozilla's `http-observatory` project to provide a HTTP security report for a provided URL.
+Observatory is provided from https://github.com/mozilla/http-observatory .
+
+The function accepts the following arguments:
+- `url` the url to run the observatory scanner on.
+- `output_format` optionally specify the format of the returned report, valid values are 'full' and 'human', if no option is provided, `full` will be used by default.
+
+## Testing the observatory function
+
+A number of test files in `functions/observatory/tests` that contain JSON for different urls that can be used to test the function.
+The `test.sh` bash script can automate this process.
