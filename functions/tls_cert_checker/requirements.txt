@@ -1,0 +1,6 @@
+cffi==1.14.4
+click==7.1.2
+cryptography==3.2.1
+pycparser==2.20
+pyOpenSSL==20.0.0
+six==1.15.0

@@ -18,34 +18,44 @@ package:
 functions:
 
   snyk_test:
-    timeout: 29
-    handler: snyk_test.handler
     module: functions/snyk_test
+    handler: snyk_test.handler
+    timeout: 29
     events:
       - http:
           path: snyk-test
           method: post
-    environment:
-      # token to access the snyk api
-      SNYK_API_KEY: ${env:SNYK_API_KEY}
+    # uncomment to use environment
+    # variable to provide the token
+    # environment:
+      # SNYK_API_KEY: ${env:SNYK_API_KEY}
 
   secrets_scanner:
-    handler: secrets_scanner.handler
     module: functions/secrets_scanner
+    handler: secrets_scanner.handler
     runtime: python3.6
-    timeout: 6
+    timeout: 10
     events:
       - http:
           path: secrets-scanner
           method: post
 
   observatory:
-    handler: observatory.handler
     module: functions/observatory
+    handler: observatory.handler
     timeout: 10
     events:
       - http:
           path: observatory
+          method: post
+
+  tls_cert_checker:
+    module: functions/tls_cert_checker
+    handler: tls_cert_checker.handler
+    timeout: 10
+    events:
+      - http:
+          path: tls-cert-checker
           method: post
 
 custom:
