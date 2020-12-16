@@ -7,8 +7,23 @@ from datetime import datetime, timedelta, date
 from pprint import pprint
 import pytz
 import boto3
-from config import FILTER_CONFIG, CLEANUP_CONFIG
-from slack_logger import post  # post() will print to the console and post to the configured Slack channel
+
+FILTER_CONFIG = {"keep_running": ["prod", "test"], "garbage_collect": "gc", "avoid_terminate": "keep"}
+CLEANUP_CONFIG = {
+    "DAYS_BEFORE_STOP": 4,
+    "DAYS_BEFORE_TERMINATE": 4,
+    "STOP_TAG": "Will Stop After",
+    "TERMINATE_TAG": "Will Terminate After",
+    "EMAIL_SOURCE": "foo@bar.io",
+}
+
+
+def report(message: str) -> None:
+    # add messages to report
+    # TODO
+    print("report", message)
+    pass
+
 
 FMT = "%Y-%m-%d %H:%M:%S"
 DAYS_BEFORE_STOP = CLEANUP_CONFIG["DAYS_BEFORE_STOP"]
@@ -27,12 +42,18 @@ class DailyInstanceClean:
             setattr(self, k, v)
 
 
-def lambda_handler(event, context):
+def cleanup(aws_key: str, aws_secret: str, dry_run: bool) -> dict:
+    # list of dicts containing messages for each region
+    cleanup_report = {"Dry run": dry_run, "region_reports": []}
+
+    # get regions
     clean = DailyInstanceClean()
+
+    # clean each region
     for region in clean.regions:
         stop_list = []
         terminate_list = []
-        post("----" + region + "----")
+
         try:
             ec2 = boto3.resource("ec2", region_name=region)
             instances = ec2.instances.all()
@@ -44,72 +65,63 @@ def lambda_handler(event, context):
                                 if "status" in tag["Key"].lower():
                                     status = tag["Value"].lower()
                                     if any(status == key_words for key_words in clean.keep_running):
-                                        post(instance.id + " is following protocol - it will continue running")
+                                        report(instance.id + " is following protocol - it will continue running")
                                     elif status == clean.garbage_collect:
                                         lookup_maintainer(instance, region)
-                                        post("GC activated - stopping instance " + instance.id)
+                                        report("GC activated - stopping instance " + instance.id)
                                         stop_list.append(instance.id)
                                     else:
                                         lookup_maintainer(instance, region)
-                                        post("stopping instance " + instance.id)
+                                        report("stopping instance " + instance.id)
                                         stop_list.append(instance.id)
                         else:
                             # no status tag - stopping instance
                             lookup_maintainer(instance, region)
-                            post("Mising status tag - stopping instance " + instance.id)
+                            report("Mising status tag - stopping instance " + instance.id)
                             stop_list.append(instance.id)
 
                     else:
                         # no tags - stopping instance
-                        post("No tags - stopping instance " + instance.id)
+                        report("No tags - stopping instance " + instance.id)
                         stop_list.append(instance.id)
                 else:
                     # instance not running
-                    post("instance " + instance.id + " not running")
+                    report("instance " + instance.id + " not running")
 
             if len(stop_list) != 0:
-                post("{} number of instances will be stopped".format(len(stop_list)))
-                ec2.instances.filter(InstanceIds=stop_list).stop()
+                report("{} number of instances will be stopped".format(len(stop_list)))
+                pass
+                #  ec2.instances.filter(InstanceIds=stop_list).stop()
             else:
-                post("nothing to stop")
+                report("nothing to stop")
 
             if len(terminate_list) != 0:
-                ec2.instance.filter(InstanceIds=terminate_list).terminate()
+                pass
+                #  ec2.instance.filter(InstanceIds=terminate_list).terminate()
             else:
-                post("nothing to terminate")
+                report("nothing to terminate")
         except Exception as e:
-            post(e)
+            report(e)
 
-    prune_long_running_instances()
+        # dict with data for each region to be reported back to invoker
+        cleanup_report["region_reports"].append(
+            {"Region": region, "stop_list": stop_list, "terminate_list": terminate_list}
+        )
+
+    # TODO fix
+    return cleanup_report
+
+    #  prune_long_running_instances()
 
 
 def lookup_maintainer(instance, region):
     if any(tag["Key"].lower() == "maintainer" for tag in instance.tags):
         for t in instance.tags:
             if "maintainer" in t["Key"].lower():
-                send_email(t["Value"], region, instance.id)
-
-
-def send_email(email, region, instanceid):
-    ses = boto3.client("ses")
-    response = ses.send_email(
-        Source=CLEANUP_CONFIG["EMAIL_SOURCE"],
-        Destination={
-            "ToAddresses": [email],
-        },
-        Message={
-            "Subject": {"Data": "Your instance will be stopped"},
-            "Body": {
-                "Text": {
-                    "Data": "Your instance {} in region {} are being stopped due to GC or failing to follow protocol \
-                    please take action ".format(
-                        instanceid, region
-                    )
-                }
-            },
-        },
-    )
-    post(response)
+                maintainer = t["key"]
+                print("maintainer", maintainer, region, instance.id)
+                # TODO translate sending emails to adding to JSON report
+                #  send_email(t["Value"], region, instance.id)
 
 
 def prune_long_running_instances():
@@ -125,8 +137,8 @@ def prune_long_running_instances():
         tag_to_stop_list = []
         tag_to_terminate_list = []
         ignore_list = []
-        post(" ")
-        post("---- " + region + " ----")
+        report(" ")
+        report("---- " + region + " ----")
         try:
             ec2 = boto3.resource("ec2", region_name=region)
             instances = ec2.instances.all()
@@ -164,37 +176,37 @@ def prune_long_running_instances():
             # Skip the actions and stats reporting if there are no instances to assess.
             instances_assessed = len(list(instances))
             if instances_assessed == 0:
-                post("No instances are running in this region.")
+                report("No instances are running in this region.")
             else:
                 # Handle instances per region
-                post("{} instances assessed:".format(instances_assessed))
+                report("{} instances assessed:".format(instances_assessed))
 
                 # Stop instances
                 if len(stop_list) != 0:
-                    post("[Dry-run] Stopping {} instances: ".format(len(stop_list)) + str(stop_list))
+                    report("[Dry-run] Stopping {} instances: ".format(len(stop_list)) + str(stop_list))
                     # Dry-run: Uncomment this line to stop instances
                     # ec2.instances.filter(InstanceIds=stop_list).stop()
                 else:
-                    post("Nothing to stop.")
+                    report("Nothing to stop.")
 
                 # Terminate instances
                 if len(terminate_list) != 0:
-                    post("[Dry-run] Terminating {} instances: ".format(len(terminate_list)) + str(terminate_list))
+                    report("[Dry-run] Terminating {} instances: ".format(len(terminate_list)) + str(terminate_list))
                     # Dry-run: Uncomment this line to terminate instances
                     # ec2.instances.filter(InstanceIds=stop_list).terminate()
                 else:
-                    post("Nothing to terminate.")
+                    report("Nothing to terminate.")
 
                 # Tag instances to stop
                 if len(tag_to_stop_list) != 0:
-                    post("Tagging {} instances for stopping: ".format(len(tag_to_stop_list)) + str(tag_to_stop_list))
+                    report("Tagging {} instances for stopping: ".format(len(tag_to_stop_list)) + str(tag_to_stop_list))
                     ec2.create_tags(Resources=tag_to_stop_list, Tags=[{"Key": STOP_TAG, "Value": get_datetime_stamp()}])
                 else:
-                    post("No instance were tagged for stopping.")
+                    report("No instance were tagged for stopping.")
 
                 # Tag instances to terminate
                 if len(tag_to_terminate_list) != 0:
-                    post(
+                    report(
                         "Tagging {} instances for termination: ".format(len(tag_to_terminate_list))
                         + str(tag_to_terminate_list)
                     )
@@ -202,14 +214,16 @@ def prune_long_running_instances():
                         Resources=tag_to_terminate_list, Tags=[{"Key": TERMINATE_TAG, "Value": get_datetime_stamp()}]
                     )
                 else:
-                    post("No instances were tagged for termination.")
+                    report("No instances were tagged for termination.")
 
                 ignored_instances = len(ignore_list)
                 if ignored_instances != 0:
-                    post("{} instances have already been tagged for stopping or termination.".format(ignored_instances))
+                    report(
+                        "{} instances have already been tagged for stopping or termination.".format(ignored_instances)
+                    )
 
         except Exception as e:
-            post("[!] Exception:" + str(e))
+            report("[!] Exception:" + str(e))
 
 
 # Returns a list of all available EC2 regions
