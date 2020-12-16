@@ -16,6 +16,8 @@ import argparse
 import json
 from instance_cleaner import cleanup
 
+ERROR_PREFIX = "ERROR:"
+
 
 def handler(event, context):
 
@@ -26,14 +28,12 @@ def handler(event, context):
         parameters = event
 
     # parse parameters and load envrironment variables
-    param_error, key, secret_key = parse_parameters(params=parameters)
+    param_error, key, secret_key, dry_run = parse_parameters(params=parameters)
     if param_error:
         return param_error
 
-    dry_run = True
-
     # TODO remove
-    print(key, secret_key)
+    #  print(key, secret_key)
 
     clean_error, report = clean_aws_resources(aws_key=key, aws_secret=secret_key, dry_run=dry_run)
     if clean_error:
@@ -53,12 +53,17 @@ def clean_aws_resources(
     dry_run: bool,
 ):
     error = None
+
+    # TODO uncomment
+    #  try:
     report = cleanup(aws_key=aws_key, aws_secret=aws_secret, dry_run=dry_run)
+    #  except Exception:
+    #  error = f"{ERROR_PREFIX} there was an error cleaning the resources, verify that the AWS credentials are valid and have the appropirate permissions."
 
     return error, report
 
 
-def parse_parameters(params: dict) -> (str, str, str):
+def parse_parameters(params: dict) -> (str, str, str, bool):
 
     # return an error string if any of the parameters are not parsed correctly, or missing
     error = None
@@ -66,6 +71,14 @@ def parse_parameters(params: dict) -> (str, str, str):
     # aws key and secret key to allow to find lambdas
     key = None
     secret_key = None
+    # default to dry run
+    dry_run = True
+
+    if "dry_run" in params:
+        # python is a bit particular with parsing strings to booleans..
+        dry_run = params["dry_run"].lower() == "true"
+    else:
+        error = f"{ERROR_PREFIX} 'dry_run' must be one of 'true' or 'false'."
 
     if "aws_key" in params:
         key = params["aws_key"]
@@ -89,7 +102,7 @@ def parse_parameters(params: dict) -> (str, str, str):
             None,
         )
 
-    return error, key, secret_key
+    return error, key, secret_key, dry_run
 
 
 # test the code locally
@@ -99,12 +112,12 @@ if __name__ == "__main__":
 
     test_event = {}
     # test cases
-    #  test_json_file = ""
-    #  with open(test_json_file) as test_json:
-    #  test_event = json.load(test_json)
+    test_json_file = "tests/test1.json"
+    with open(test_json_file) as test_json:
+        test_event = json.load(test_json)
     test_context = {}
     test_res = handler(test_event, test_context)
     #  print(test_res)
-    pprint(json.loads(test_res["body"]))
+    pprint(object=json.loads(test_res["body"]), width=120)
     #  print(test_res)
     #  pprint(test_res)

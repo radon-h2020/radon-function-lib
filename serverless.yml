@@ -88,6 +88,15 @@ functions:
           rate: cron(15 10 * * ? *)
           enabled: true
 
+  aws_ec2_cleanup:
+    module: functions/aws_ec2_cleanup
+    handler: aws_ec2_cleanup.handler
+    timeout: 10
+    events:
+      - http:
+          path: aws-ec2-cleanup
+          method: post
+
 custom:
   pythonRequirements:
     # if not building from linux, use docker to build python dependencies

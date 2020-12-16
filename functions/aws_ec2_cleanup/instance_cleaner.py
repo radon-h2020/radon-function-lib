@@ -44,7 +44,7 @@ class DailyInstanceClean:
 
 def cleanup(aws_key: str, aws_secret: str, dry_run: bool) -> dict:
     # list of dicts containing messages for each region
-    cleanup_report = {"Dry run": dry_run, "region_reports": []}
+    cleanup_report = {"dry_run": dry_run, "region_reports": {}}
 
     # get regions
     clean = DailyInstanceClean()
@@ -53,6 +53,7 @@ def cleanup(aws_key: str, aws_secret: str, dry_run: bool) -> dict:
     for region in clean.regions:
         stop_list = []
         terminate_list = []
+        messages = []
 
         try:
             ec2 = boto3.resource("ec2", region_name=region)
@@ -65,48 +66,64 @@ def cleanup(aws_key: str, aws_secret: str, dry_run: bool) -> dict:
                                 if "status" in tag["Key"].lower():
                                     status = tag["Value"].lower()
                                     if any(status == key_words for key_words in clean.keep_running):
-                                        report(instance.id + " is following protocol - it will continue running")
+                                        messages.append(
+                                            f"{instance.id} is following protocol - it will continue running"
+                                        )
                                     elif status == clean.garbage_collect:
                                         lookup_maintainer(instance, region)
-                                        report("GC activated - stopping instance " + instance.id)
+                                        messages.append(f"GC activated - stopping instance {instance.id}")
                                         stop_list.append(instance.id)
                                     else:
                                         lookup_maintainer(instance, region)
-                                        report("stopping instance " + instance.id)
+                                        messages.append(f"stopping instance {instance.id}")
                                         stop_list.append(instance.id)
                         else:
                             # no status tag - stopping instance
                             lookup_maintainer(instance, region)
-                            report("Mising status tag - stopping instance " + instance.id)
+                            messages.append(f"Missing status tag - stopping instance {instance.id}")
                             stop_list.append(instance.id)
 
                     else:
                         # no tags - stopping instance
-                        report("No tags - stopping instance " + instance.id)
+                        messages.append(f"No tags - stopping instance {instance.id}")
                         stop_list.append(instance.id)
                 else:
                     # instance not running
-                    report("instance " + instance.id + " not running")
+                    messages.append(f"instance {instance.id} not running")
 
             if len(stop_list) != 0:
-                report("{} number of instances will be stopped".format(len(stop_list)))
-                pass
-                #  ec2.instances.filter(InstanceIds=stop_list).stop()
+                if dry_run:
+                    messages.append(
+                        f"{len(stop_list)} number of instances will be stopped (disable dry_run to false to execute)"
+                    )
+                else:
+                    messages.append(f"{len(stop_list)} number of instances will be stopped")
+                    ec2.instances.filter(InstanceIds=stop_list).stop()
             else:
-                report("nothing to stop")
+                messages.append("nothing to stop")
 
             if len(terminate_list) != 0:
-                pass
-                #  ec2.instance.filter(InstanceIds=terminate_list).terminate()
+                if dry_run:
+                    messages.append(
+                        f"{len(stop_list)} number of instances will be terminated (disable dry_run to execute)"
+                    )
+                else:
+                    messages.append(f"{len(stop_list)} number of instances will be terminated")
+                    ec2.instance.filter(InstanceIds=terminate_list).terminate()
             else:
-                report("nothing to terminate")
+                messages.append("nothing to terminate")
         except Exception as e:
-            report(e)
+            messages.append(e)
 
         # dict with data for each region to be reported back to invoker
-        cleanup_report["region_reports"].append(
-            {"Region": region, "stop_list": stop_list, "terminate_list": terminate_list}
-        )
+        cleanup_report["region_reports"][region] = {
+            "messages": messages,
+        }
+
+        if stop_list:
+            cleanup_report["region_reports"][region]["ec2_ids_to_be_stoppped"] = stop_list
+        if terminate_list:
+            cleanup_report["region_reports"][region]["ec2_ids_to_be_terimnated"] = terminate_list
 
     # TODO fix
     return cleanup_report
