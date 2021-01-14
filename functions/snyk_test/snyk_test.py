@@ -27,6 +27,8 @@ ARTIFACT_EXTRACT_LOCATION = f"{ARTIFACT_DOWNLOAD_LOCATION}/extracted"
 ARTIFACT_ZIP_FILE = f"{ARTIFACT_DOWNLOAD_LOCATION}/artifact.zip"
 # the default output format to use if none is specified
 DEFAULT_OUTPUT_FORMAT = "full"
+# a personal snyk api key is necassary in order to scan the artifact
+SNYK_API_KEY = os.getenv("SNYK_API_KEY")
 
 
 def handler(event, context):
@@ -232,7 +234,7 @@ def parse_parameters(params: dict) -> (str, str, str):
     error = None
 
     # load snyk api token from environment if it is not provided
-    snyk_api_key = params["body"]["snyk_api_key"] if "snyk_api_key" in params else os.getenv("SNYK_API_KEY")
+    snyk_api_key = params["body"]["snyk_api_key"] if "snyk_api_key" in params else SNYK_API_KEY
     # if api key is not set, return error
     if snyk_api_key is None:
         error = f"{ERROR_PREFIX} Could not find a Snyk API key, please set the 'SNYK_API_KEY' environment variable, or pass the API key as an argument: 'snyk_api_key':<api_key>."
