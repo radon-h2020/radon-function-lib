@@ -44,7 +44,7 @@ class DailyInstanceClean:
 
 def cleanup(aws_key: str, aws_secret: str, dry_run: bool) -> dict:
     # list of dicts containing messages for each region
-    cleanup_report = {"dry_run": dry_run, "region_reports": {}}
+    cleanup_report = {"dry_run": dry_run}
 
     # get regions
     clean = DailyInstanceClean()
@@ -56,40 +56,54 @@ def cleanup(aws_key: str, aws_secret: str, dry_run: bool) -> dict:
         messages = []
 
         try:
+            # get all ec2 instances in region
             ec2 = boto3.resource("ec2", region_name=region)
             instances = ec2.instances.all()
+
             for instance in instances:
+
+                instance_messages = []
+
                 if instance.state["Name"] == "running":
+
                     if instance.tags != None:
+
                         if any(tag["Key"].lower() == "status" for tag in instance.tags):
+
                             for tag in instance.tags:
+
                                 if "status" in tag["Key"].lower():
                                     status = tag["Value"].lower()
                                     if any(status == key_words for key_words in clean.keep_running):
-                                        messages.append(
+                                        instance_messages.append(
                                             f"{instance.id} is following protocol - it will continue running"
                                         )
                                     elif status == clean.garbage_collect:
-                                        lookup_maintainer(instance, region)
-                                        messages.append(f"GC activated - stopping instance {instance.id}")
+                                        instance_messages.append(lookup_contact_info(instance, region))
+                                        instance_messages.append(f"GC activated - stopping instance {instance.id}")
                                         stop_list.append(instance.id)
                                     else:
-                                        lookup_maintainer(instance, region)
-                                        messages.append(f"stopping instance {instance.id}")
+                                        instance_messages.append(lookup_contact_info(instance, region))
+                                        instance_messages.append(f"stopping instance {instance.id}")
                                         stop_list.append(instance.id)
                         else:
                             # no status tag - stopping instance
-                            lookup_maintainer(instance, region)
-                            messages.append(f"Missing status tag - stopping instance {instance.id}")
+                            instance_messages.append(lookup_contact_info(instance, region))
+                            instance_messages.append(f"Missing status tag - stopping instance {instance.id}")
                             stop_list.append(instance.id)
 
                     else:
                         # no tags - stopping instance
-                        messages.append(f"No tags - stopping instance {instance.id}")
+                        instance_messages.append(f"No tags - stopping instance {instance.id}")
                         stop_list.append(instance.id)
                 else:
                     # instance not running
-                    messages.append(f"instance {instance.id} not running")
+                    instance_messages.append(f"instance {instance.id} not running")
+
+                print(instance_messages)
+                if instance_messages:
+                    print("instance_messages", instance_messages)
+                    cleanup_report[region][instance.id] = instance_messages
 
             if len(stop_list) != 0:
                 if dry_run:
@@ -99,8 +113,8 @@ def cleanup(aws_key: str, aws_secret: str, dry_run: bool) -> dict:
                 else:
                     messages.append(f"{len(stop_list)} number of instances will be stopped")
                     ec2.instances.filter(InstanceIds=stop_list).stop()
-            else:
-                messages.append("nothing to stop")
+            #  else:
+            #  instance_messages.append("nothing to stop")
 
             if len(terminate_list) != 0:
                 if dry_run:
@@ -110,20 +124,20 @@ def cleanup(aws_key: str, aws_secret: str, dry_run: bool) -> dict:
                 else:
                     messages.append(f"{len(stop_list)} number of instances will be terminated")
                     ec2.instance.filter(InstanceIds=terminate_list).terminate()
-            else:
-                messages.append("nothing to terminate")
+            #  else:
+            #  instance_messages.append("nothing to terminate")
         except Exception as e:
-            messages.append(e)
+            messages.append(str(e))
 
         # dict with data for each region to be reported back to invoker
-        cleanup_report["region_reports"][region] = {
-            "messages": messages,
-        }
-
-        if stop_list:
-            cleanup_report["region_reports"][region]["ec2_ids_to_be_stoppped"] = stop_list
-        if terminate_list:
-            cleanup_report["region_reports"][region]["ec2_ids_to_be_terimnated"] = terminate_list
+        if messages or stop_list or terminate_list:
+            cleanup_report[region] = {}
+            if messages:
+                cleanup_report[region]["messages"] = messages
+            if stop_list:
+                cleanup_report[region]["ec2_ids_to_be_stoppped"] = stop_list
+            if terminate_list:
+                cleanup_report[region]["ec2_ids_to_be_terimnated"] = terminate_list
 
     # TODO fix
     return cleanup_report
@@ -131,14 +145,12 @@ def cleanup(aws_key: str, aws_secret: str, dry_run: bool) -> dict:
     #  prune_long_running_instances()
 
 
-def lookup_maintainer(instance, region):
-    if any(tag["Key"].lower() == "maintainer" for tag in instance.tags):
-        for t in instance.tags:
-            if "maintainer" in t["Key"].lower():
-                maintainer = t["key"]
-                print("maintainer", maintainer, region, instance.id)
-                # TODO translate sending emails to adding to JSON report
-                #  send_email(t["Value"], region, instance.id)
+def lookup_contact_info(instance):
+    contact_info = {}
+    for tag_dict in instance.tags:
+        if tag_dict["key"].lower() in ["name", "department", "contact", "contact2"]:
+            contact_info[tag_dict["Key"]] = tag_dict["Value"]
+    return contact_info
 
 
 def prune_long_running_instances():

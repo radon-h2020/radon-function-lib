@@ -86,7 +86,8 @@ def parse_parameters(params: dict) -> (str, str, str, bool):
         key = os.getenv("AWS_KEY", None)
     else:
         return (
-            "Could not parse an aws_key, you must either set one as an environment variable or provide one with as the 'aws_key' argument.",
+            "Could not parse an aws_key, you must either set one as an environment variable or provide one with the 'aws_key' argument.",
+            None,
             None,
             None,
         )
@@ -97,7 +98,8 @@ def parse_parameters(params: dict) -> (str, str, str, bool):
         secret_key = os.getenv("AWS_SECRET", None)
     else:
         return (
-            "Could not parse an aws_secret, you must either set one as an environment variable or provide one with as the 'aws_secret' argument.",
+            "Could not parse an aws_secret, you must either set one as an environment variable or provide one with the 'aws_secret' argument.",
+            None,
             None,
             None,
         )
@@ -118,6 +120,6 @@ if __name__ == "__main__":
     test_context = {}
     test_res = handler(test_event, test_context)
     #  print(test_res)
-    pprint(object=json.loads(test_res["body"]), width=120)
+    pprint(object=json.loads(test_res["body"]), width=200)
     #  print(test_res)
     #  pprint(test_res)
