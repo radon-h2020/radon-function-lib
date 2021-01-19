@@ -128,3 +128,14 @@ The function accpets one of the arguments:
 ### Testing the tls_cert_checker
 A few test cases are located in functions/tls_cert_checker/tests as JSON files with appropriate arguments.
 The generic `test.sh` script can be used to wrap around `serverless invoke` to run each test case against all of the functions in the project.
+
+## HaveIBeenPwned?
+
+Have I Been Pwned is database containing emails that has been a part of known data breaches. This function checks wether the provided email has been a part of a data breach or not.  
+
+The function requires two parameters, passed as json:
+  `curl -X POST -d {"email": "<youremail>","api_key": <yourkey>} https://HIBPlambda/breached-email-check`
+
+In order to use the [API](https://haveibeenpwned.com/API/v3) you need an API token. This can be acquired [here](https://haveibeenpwned.com/API/Key)
+
+

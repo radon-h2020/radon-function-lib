@@ -57,6 +57,15 @@ functions:
       - http:
           path: tls-cert-checker
           method: post
+  
+  have_i_been_pwned:
+    module: functions/haveibeenpwned
+    handler: haveibeenpwned.handler
+    timeout: 10
+    events:
+      - http:
+          path: breached-email-check
+          method: post
 
 custom:
   pythonRequirements:
@@ -65,3 +74,4 @@ custom:
 
 plugins:
   - serverless-python-requirements
+  - serverless-offline
