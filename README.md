@@ -138,4 +138,12 @@ The function requires two parameters, passed as json:
 
 In order to use the [API](https://haveibeenpwned.com/API/v3) you need an API token. This can be acquired [here](https://haveibeenpwned.com/API/Key)
 
+## Schemathesis
+
+Schemathesis is a tool which takes an OpenAPI yaml as input and test all sub-paths in API tree. The API can be fed into the FaaS as a file, string or url.
+
+Function is intended to be called as cron job. Necessary environment variables are API_PATH and BASE_URL
+
+For examples and details see [Schemathesis](https://github.com/HypothesisWorks/hypothesis)
+
 
