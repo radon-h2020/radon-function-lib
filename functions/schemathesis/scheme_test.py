@@ -1,5 +1,4 @@
 import os
-import json
 import schemathesis
 from hypothesis import settings, Verbosity
 
@@ -11,7 +10,7 @@ BASE_URL = os.getenv("BASE_URL")
 
 def handler(event,context):
     import pytest
-    return pytest.main()
+    return pytest.main(['-o', 'cache_dir=/tmp/.testcache'])
 
 # will only be run if called from cli
 if __name__ == "__main__":

@@ -68,7 +68,7 @@ functions:
           method: post
 
 
-  schemathesis_cron:
+  schemathesis:
     module: functions/schemathesis
     handler: scheme_test.handler
     timeout: 10
