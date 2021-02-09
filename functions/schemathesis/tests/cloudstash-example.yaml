@@ -1,0 +1,23 @@
+openapi: 3.0.0
+info:
+  title: Sample API
+  description: Optional multiline or single-line description in [CommonMark](http://commonmark.org/help/) or HTML.
+  version: 0.1.9
+servers:
+  - url: http://cloudstash.io
+    description: Optional server description, e.g. Main (production) server
+paths:
+  /publicrepository:
+    get:
+      summary: List public repositories
+      description: Optional extended description in Markdown
+      parameters:
+        - name: repoType
+          in: query
+          required: true
+          schema:
+            type: string
+            example: Function
+      responses:
+        '200':
+          description: OK
