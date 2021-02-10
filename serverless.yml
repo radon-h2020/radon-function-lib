@@ -67,6 +67,16 @@ functions:
           path: breached-email-check
           method: post
 
+  black_linter:
+    module: functions/black-linter
+    handler: black_linter.handler
+    timeout: 10
+    events:
+      events:
+      - http:
+          path: blacked_repo
+          method: post
+
 custom:
   pythonRequirements:
     # if not building from linux, use docker to build python dependencies
