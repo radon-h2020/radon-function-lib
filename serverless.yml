@@ -74,7 +74,7 @@ functions:
     events:
       events:
       - http:
-          path: blacked_repo
+          path: blacked-repo
           method: post
 
 custom:
