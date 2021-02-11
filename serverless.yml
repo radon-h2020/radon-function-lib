@@ -72,7 +72,6 @@ functions:
     handler: black_linter.handler
     timeout: 10
     events:
-      events:
       - http:
           path: blacked-repo
           method: post
