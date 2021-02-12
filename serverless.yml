@@ -67,6 +67,14 @@ functions:
           path: breached-email-check
           method: post
 
+  black_linter:
+    module: functions/black-linter
+    handler: black_linter.handler
+    timeout: 10
+    events:
+      - http:
+          path: blacked-repo
+          method: post
 
   schemathesis:
     module: functions/schemathesis
