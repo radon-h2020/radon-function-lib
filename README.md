@@ -147,3 +147,11 @@ The function is intended to be called as cron job. Necessary environment variabl
 For examples and details see [Schemathesis](https://github.com/HypothesisWorks/hypothesis)
 
 
+## Black linting
+
+[Black](https://black.readthedocs.io/en/stable) is a Python linter for passive or intrusive linting of your code base. This FaaS is executed with a POST http request with one argument passed in a JSON object. 
+
+It takes the following argument:
+`git-repo` - A public repo will be cloned and the content traversed for .py extensions and linted. 
+
+The function outputs a suggested diff for each file.
