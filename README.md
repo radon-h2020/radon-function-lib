@@ -140,10 +140,18 @@ In order to use the [API](https://haveibeenpwned.com/API/v3) you need an API tok
 
 ## Schemathesis
 
-Schemathesis is a tool which takes an OpenAPI yaml as input and test all sub-paths in API tree. The API is passed to the lambda with environment variablea.
+Schemathesis is a tool which takes an OpenAPI yaml as input and test all sub-paths in API tree. The API is passed to the lambda with environment variables.
 
-Function is intended to be called as cron job. Necessary environment variables are API_PATH and BASE_URL
+The function is intended to be called as cron job. Necessary environment variables are API_PATH and BASE_URL.
 
 For examples and details see [Schemathesis](https://github.com/HypothesisWorks/hypothesis)
 
 
+## Black linting
+
+[Black](https://black.readthedocs.io/en/stable) is a Python linter for passive or intrusive linting of your code base. This FaaS is executed with a POST http request with one argument passed in a JSON object. 
+
+It takes the following argument:
+`git-repo` - A public repo will be cloned and the content traversed for .py extensions and linted. 
+
+The function outputs a suggested diff for each file.
