@@ -68,8 +68,8 @@ functions:
           method: post
 
   black_linter:
-    module: functions/black-linter
-    handler: black_linter.handler
+    module: functions/black_linter
+    handler: blacklinter.handler
     timeout: 10
     events:
       - http:

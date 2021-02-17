@@ -3,12 +3,11 @@ import json
 from zipfile import ZipFile
 from black import format_file_in_place, FileMode, WriteBack
 from pathlib import Path
-import pprint
+import requests
 
-LOCAL_PATH = "/tmp/repo"
+LOCAL_PATH = "/tmp"
 
 def handler(event, context):
-    # retrieve body and email to verify risk factor
     if "body" in event and event["body"]:
         params = json.loads(event["body"])
     else:
@@ -24,28 +23,26 @@ def handler(event, context):
         }
 
     try:
-        download_command = f"wget {git_repo}/archive/{git_branch}.zip -P {LOCAL_PATH}"
-        os.system(download_command)
+        r = requests.get(f"{git_repo}/archive/{git_branch}.zip")
+        open(f"{LOCAL_PATH}/{git_branch}.zip",'wb').write(r.content)
 
         with ZipFile(f"{LOCAL_PATH}/{git_branch}.zip", "r") as zipObj:
             zipObj.extractall(f"{LOCAL_PATH}")
 
-        # lint_command = f"black {LOCAL_PATH} --diff"
-        result = {}
         for root, dirs, files in os.walk(LOCAL_PATH):
             for file in files:
                 if file.endswith(".py"): 
-                    result[file] = format_file_in_place(Path(f"{root}/{file}"),False,FileMode(),WriteBack.DIFF)
+                    format_file_in_place(Path(f"{root}/{file}"),False,FileMode(),WriteBack.DIFF)
 
-        # result = subprocess.check_outpu1t(lint_command, shell=True)
         return {
-            "body": result,
+            "body": {"message": "result in logs"},
             "headers": {"Content-Type": "application/json"},
             "statusCode": 200,
         }
-    except:
+    except Exception as e:
+        message = e.message if hasattr(e,'message') else e
         return {
-            "body": json.dumps({"message": "something went wrong"}),
+            "body": {"message": message},
             "headers": {"Content-Type": "application/json"},
             "statusCode": 200,
         }

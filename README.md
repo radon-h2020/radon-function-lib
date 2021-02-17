@@ -1,42 +1,13 @@
 # Radon Function Library
 
-This repository contains a number of serverless functions relating to log, state, cloud & security.
-
-# Deploying Functions
-
-The project comes with a `serverless framework` project to deploy the functions.
-
-Deploying the functions will require `npm` and `python/pip` to be installed.
-
-First install `serverless framework` globally:
-```sh
-npm install -g serverless
-```
-(Global installation might require sudo)
-
-Then clone this repository, then use `npm` to install `serverless` and it's dependencies:
-```sh
-npm install
-```
-
-Then use the `serverless` cli tool to deploy the stack:
-```sh
-serverless deploy
-```
-
-For convenience serverless provides the alias `sls` for the `serverless` command.
-
-You can use the `info` command to get an overview of existing resources:
-```sh
-sls info
-```
+This repository contains a number of serverless functions relating to log, state, cloud & security. These are available at [FunctionHub](cloudstash.io)
 
 # Adding New Functions
 
 New functions added to the project should be placed in a directory in the `functions` directory.
 Each directory in `functions` should contain all of the code, and dependency specification, i.e. `requirements.txt` or `package.json`, for that function.
 
-The function should be added to the `serverless.yml` in order to easily deploy the function and verify that it works.
+The function should be added to `serverless/serverless.yml` in order to easily deploy the function and verify that it works.
 
 Add a new key to `functions` yaml dictionary:
 ```yaml
@@ -48,12 +19,12 @@ functions:
   ...
 ```
 
-Then use `serverless deploy` to deploy the new function.
+You might want to look at how the existing functions are handled when adding new ones.
 
-Note that the deployment uses an AWS API gateway, which has a specific way of providing JSON arguments, and requirements for how responses should be structured.
-You might want to look at how the existing functions handle this, in order to now experience API Gateway related problems.
 
 # Functions
+
+Current collection of generic-reusable functions.
 
 ## snyk_test
 
@@ -149,9 +120,10 @@ For examples and details see [Schemathesis](https://github.com/HypothesisWorks/h
 
 ## Black linting
 
-[Black](https://black.readthedocs.io/en/stable) is a Python linter for passive or intrusive linting of your code base. This FaaS is executed with a POST http request with one argument passed in a JSON object. 
+[Black](https://black.readthedocs.io/en/stable) is a Python linter for passive or intrusive linting of your code base. This FaaS is executed with a POST http request with arguments passed in a JSON object. 
 
 It takes the following argument:
 `git-repo` - A public repo will be cloned and the content traversed for .py extensions and linted. 
+`git-branch` - The branch that is cloned
 
 The function outputs a suggested diff for each file.
