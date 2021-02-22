@@ -1,3 +1,1 @@
-
-
-curl -X POST -d {"git_repo": "https://github.com/user/repo"} lambdaEndpoint/blacked-repo
+curl -X POST -d {"wfuzz_url": "http://testphp.vulnweb.com"} https://<fuzzLambda>/fuzz
