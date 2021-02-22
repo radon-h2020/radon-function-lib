@@ -39,6 +39,8 @@ The function accepts the following arguments:
 
 The function will return a list of vulnerabilities if any are found, or string indicating that no vulnerabilities were found.
 
+### Python and NodeJS
+
 Currently `python` and `node` runtimes are supported. In order to test a function artifact, it's corresponding dependecy configuration file must be included in the root of the artifact .zip file.
 Valid filename are:
 - `requirements.txt` - for the `python` runtime.
