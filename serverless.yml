@@ -17,8 +17,8 @@ package:
 
 functions:
 
-  snyk_test:
-    module: functions/snyk_test
+  snyk_test_python:
+    module: functions/snyk_test_python
     handler: snyk_test.handler
     timeout: 29
     events:
@@ -29,6 +29,19 @@ functions:
     # variable to provide the token
     # environment:
       # SNYK_API_KEY: ${env:SNYK_API_KEY}
+
+  snyk_test_node:
+      module: functions/snyk_test_node
+      handler: snyk_test.handler
+      timeout: 29
+      events:
+        - http:
+            path: snyk-test
+            method: post
+      # uncomment to use environment
+      # variable to provide the token
+      # environment:
+        # SNYK_API_KEY: ${env:SNYK_API_KEY}
 
   secrets_scanner:
     module: functions/secrets_scanner
