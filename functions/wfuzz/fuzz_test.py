@@ -7,18 +7,19 @@ def handler(event, context):
     else:
         params = event
     try:
-        fuzz_url = f"{params['fuzz_url']}/FUZZ"
+        fuzz_url = f"{params['wfuzz_url']}/FUZZ"
+        print(fuzz_url)
     except KeyError:
         return {
-            "body": json.dumps({"message": "fuzz_url is not provided"}),
+            "body": json.dumps({"message": "wfuzz_url is not provided"}),
             "headers": {"Content-Type": "application/json"},
             "statusCode": 401,
         }
-
     try:
-        results = []
-        for r in wfuzz.fuzz(url=fuzz_url, hc=[200], payloads=[("file",dict(fn="wordlist/general/common.txt"))]):
-            results.append(r)
+        results = {}
+        for r in wfuzz.fuzz(url=fuzz_url, hc=[200], payloads=[("file",dict(fn="tests/payload.txt"))]):
+            if r.code == 200 or r.code == 301:
+                results[r.description] = [r.url,r.code]
 
         return {
             "body": {"message": results},
