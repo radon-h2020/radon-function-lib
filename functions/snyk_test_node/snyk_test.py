@@ -149,12 +149,6 @@ def test_dependencies_for_vulnerabilities(runtime: str, artifact_location: str, 
     # use the appropriate snyk test function based on the runtime
     # TODO figure out some way of differentiating between runtimes with multiple
     # dependency file types, like for java - gradle vs maven
-    if runtime == "python":
-        return test_dependency_file(
-            snyk_test_func=snyk_org.test_pipfile,
-            dependency_file_name="requirements.txt",
-            artifact_location=artifact_location,
-        )
     if runtime == "node":
         return test_dependency_file(
             snyk_test_func=snyk_org.test_packagejson,
@@ -176,9 +170,6 @@ def get_function_runtime(artifact_id: str) -> (str, str):
     else:
         error = f"{ERROR_PREFIX} could not get cloudstash artifact metadata, make sure that the artifact id is correct."
 
-    # TODO add more runtimes
-    if "python" in groupid:
-        runtime = "python"
     if "node" in groupid:
         runtime = "node"
 
