@@ -1,0 +1,1 @@
+curl -X POST -d {"wfuzz_url": "http://testphp.vulnweb.com"} https://<fuzzLambda>/fuzz

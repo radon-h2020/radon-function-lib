@@ -129,3 +129,12 @@ It takes the following argument:
 `git-branch` - The branch that is cloned
 
 The function outputs a suggested diff for each file.
+
+## WFUZZ
+
+[WFUZZ](https://wfuzz.readthedocs.io/en/latest/) is a pen-test tool. It traverse potential open directories for a provided url. This Faas is executed with a POST http request with arguments passed in a JSON object
+
+It takes the following argument:
+`fuzz_url` - The url you wish to security scan
+
+The function outputs potential open directories.

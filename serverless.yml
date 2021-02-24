@@ -89,6 +89,15 @@ functions:
           path: blacked-repo
           method: post
 
+  wfuzz_pentest:
+    module: functions/wfuzz
+    handler: wfuzz_test.handler
+    timeout: 10
+    events:
+      - http:
+          path: fuzzed
+          method: post
+
   schemathesis:
     module: functions/schemathesis
     handler: scheme_test.handler
