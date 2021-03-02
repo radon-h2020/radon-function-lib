@@ -107,6 +107,7 @@ The generic `test.sh` script can be used to wrap around `serverless invoke` to r
 Have I Been Pwned is database containing emails that has been a part of known data breaches. This function checks wether the provided email has been a part of a data breach or not.  
 
 The function requires two parameters, passed as json:
+
   `curl -X POST -d {"email": "<youremail>","api_key": <yourkey>} https://HIBPlambda/breached-email-check`
 
 In order to use the [API](https://haveibeenpwned.com/API/v3) you need an API token. This can be acquired [here](https://haveibeenpwned.com/API/Key)
@@ -125,6 +126,7 @@ For examples and details see [Schemathesis](https://github.com/HypothesisWorks/h
 [Black](https://black.readthedocs.io/en/stable) is a Python linter for passive or intrusive linting of your code base. This FaaS is executed with a POST http request with arguments passed in a JSON object. 
 
 It takes the following argument:
+
 `git-repo` - A public repo will be cloned and the content traversed for .py extensions and linted. 
 `git-branch` - The branch that is cloned
 
@@ -135,6 +137,14 @@ The function outputs a suggested diff for each file.
 [WFUZZ](https://wfuzz.readthedocs.io/en/latest/) is a pen-test tool. It traverse potential open directories for a provided url. This Faas is executed with a POST http request with arguments passed in a JSON object
 
 It takes the following argument:
+
 `fuzz_url` - The url you wish to security scan
 
 The function outputs potential open directories.
+
+
+## WeirdAll
+
+[WeirdALL](https://github.com/carnal0wnage/weirdAAL) is a security tool that checks the validity of any AWS keypair. This FaaS takes the key pair either as ENV_VAR or JSON format.
+
+The function outputs the validity of the key and the different access rights related to the keys.
