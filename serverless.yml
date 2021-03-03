@@ -97,6 +97,15 @@ functions:
       - http:
           path: fuzzed
           method: post
+  
+  weirdall_keycheck:
+    module: functions/weirdaal
+    handler: keycheck.handler
+    timeout: 10
+    events:
+      - http:
+          path: keycheck
+          method: post  
 
   schemathesis:
     module: functions/schemathesis
@@ -109,6 +118,7 @@ functions:
       - schedule:
           rate: cron(15 10 * * ? *)
           enabled: true
+          
 
 custom:
   pythonRequirements:

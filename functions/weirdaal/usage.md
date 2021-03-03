@@ -1,0 +1,1 @@
+curl -X POST -d {"aws_secret_key_id":  "KEYID", "aws_secret_access_key" : "ACCESSKEY"} https://<keycheck>/keycheck
