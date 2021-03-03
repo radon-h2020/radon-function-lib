@@ -99,7 +99,7 @@ functions:
           method: post
   
   weirdall_keycheck:
-    module: functions/weirdall
+    module: functions/weirdaal
     handler: keycheck.handler
     timeout: 10
     events:
