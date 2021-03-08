@@ -80,6 +80,15 @@ functions:
           path: breached-email-check
           method: post
 
+  isort_clean:
+    module: functions/isort_clean
+    handler: isort_clean.handler
+    timeout: 10
+    events:
+      - http:
+          path: isort
+          method: post
+
   black_linter:
     module: functions/black_linter
     handler: blacklinter.handler
