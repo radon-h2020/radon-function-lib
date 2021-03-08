@@ -1,0 +1,5 @@
+{ 
+"git_repo": "https://github.com/radon-h2020/radon-functionhub-client",
+"git_branch": "master",
+"python_main": "main.py"
+}

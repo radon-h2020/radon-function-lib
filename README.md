@@ -148,3 +148,16 @@ The function outputs potential open directories.
 [WeirdALL](https://github.com/carnal0wnage/weirdAAL) is a security tool that checks the validity of any AWS keypair. This FaaS takes the key pair either as ENV_VAR or JSON format.
 
 The function outputs the validity of the key and the different access rights related to the keys.
+
+
+## Isort
+
+[Isort](hhttps://github.com/PyCQA/isort) is a code quality tool for passive or intrusive clean up of imported libraries. This FaaS is executed with a POST http request with arguments passed in a JSON object. 
+
+It takes the following argument:
+
+`git-repo` - A public repo will be cloned and the content traversed for .py extensions and linted. 
+`git-branch` - The branch that is cloned
+`python-main` - The main file you want 'cleaned'
+
+The function outputs a suggested diff for your selected file.
