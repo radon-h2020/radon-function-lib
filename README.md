@@ -102,7 +102,7 @@ The function accpets one of the arguments:
 A few test cases are located in functions/tls_cert_checker/tests as JSON files with appropriate arguments.
 The generic `test.sh` script can be used to wrap around `serverless invoke` to run each test case against all of the functions in the project.
 
-## HaveIBeenPwned?
+## have_i_been_pwned?
 
 Have I Been Pwned is database containing emails that has been a part of known data breaches. This function checks wether the provided email has been a part of a data breach or not.  
 
@@ -112,7 +112,7 @@ The function requires two parameters, passed as json:
 
 In order to use the [API](https://haveibeenpwned.com/API/v3) you need an API token. This can be acquired [here](https://haveibeenpwned.com/API/Key)
 
-## Schemathesis
+## schemathesis
 
 Schemathesis is a tool which takes an OpenAPI yaml as input and test all sub-paths in API tree. The API is passed to the lambda with environment variables.
 
@@ -121,7 +121,7 @@ The function is intended to be called as cron job. Necessary environment variabl
 For examples and details see [Schemathesis](https://github.com/HypothesisWorks/hypothesis)
 
 
-## Black linting
+## black_linting
 
 [Black](https://black.readthedocs.io/en/stable) is a Python linter for passive or intrusive linting of your code base. This FaaS is executed with a POST http request with arguments passed in a JSON object. 
 
@@ -132,7 +132,7 @@ It takes the following argument:
 
 The function outputs a suggested diff for each file.
 
-## WFUZZ
+## wfuzz
 
 [WFUZZ](https://wfuzz.readthedocs.io/en/latest/) is a pen-test tool. It traverse potential open directories for a provided url. This Faas is executed with a POST http request with arguments passed in a JSON object
 
@@ -143,14 +143,14 @@ It takes the following argument:
 The function outputs potential open directories.
 
 
-## WeirdAll
+## weird_all
 
 [WeirdALL](https://github.com/carnal0wnage/weirdAAL) is a security tool that checks the validity of any AWS keypair. This FaaS takes the key pair either as ENV_VAR or JSON format.
 
 The function outputs the validity of the key and the different access rights related to the keys.
 
 
-## Isort
+## isort
 
 [Isort](hhttps://github.com/PyCQA/isort) is a code quality tool for passive or intrusive clean up of imported libraries. This FaaS is executed with a POST http request with arguments passed in a JSON object. 
 
