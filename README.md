@@ -136,7 +136,7 @@ The function outputs a suggested diff for each file.
 
 [WFUZZ](https://wfuzz.readthedocs.io/en/latest/) is a pen-test tool. It traverse potential open directories for a provided url. This Faas is executed with a POST http request with arguments passed in a JSON object
 
-It takes the following argument:
+It takes the following arguments:
 
 `fuzz_url` - The url you wish to security scan
 
@@ -154,10 +154,23 @@ The function outputs the validity of the key and the different access rights rel
 
 [Isort](hhttps://github.com/PyCQA/isort) is a code quality tool for passive or intrusive clean up of imported libraries. This FaaS is executed with a POST http request with arguments passed in a JSON object. 
 
-It takes the following argument:
+It takes the following arguments:
 
 `git-repo` - A public repo will be cloned and the content traversed for .py extensions and linted. 
 `git-branch` - The branch that is cloned
 `python-main` - The main file you want 'cleaned'
+
+The function outputs a suggested diff for your selected file.
+
+
+## Pylinter
+
+[Isort](hhttps://github.com/PyCQA/pylint) is a static analysis tool that makes opinionated suggestions about your code base based on best practice within 'pythonic' development.
+
+It takes the following arguments:
+
+`git-repo` - A public repo will be cloned and the content traversed for .py extensions and linted. 
+`git-branch` - The branch that is cloned
+`python-main` - The main file you want 'linted'
 
 The function outputs a suggested diff for your selected file.
