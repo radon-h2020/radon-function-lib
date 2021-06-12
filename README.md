@@ -22,6 +22,13 @@ functions:
 You might want to look at how the existing functions are handled when adding new ones.
 
 
+# Setup
+
+## Install plugins
+```sh
+serverless install plugin --name serverless-python-requirements
+```
+
 # Functions
 
 Current collection of generic-reusable functions.
