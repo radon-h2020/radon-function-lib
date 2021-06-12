@@ -2,8 +2,7 @@
 
 """
 This lambda function will provide a report of AWS resources that should be cleaned up (deleted)
-based on ......
-TODO
+based on a set protocol.
 
 aws_cleanup by Praqma/Eficode https://github.com/Praqma/aws-cleanup (private repo)
 modified by @zanderhavgaard
