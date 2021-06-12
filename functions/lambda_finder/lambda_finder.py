@@ -4,10 +4,8 @@
 import json
 import argparse
 import os
-
 # use list_lambas to find lambdas
 import list_lambdas
-
 
 # this lambda function scans all AWS regions for deployed lambda functions and returns a JSON list
 # with information about deployed lambdas
@@ -106,7 +104,6 @@ def parse_parameters(params: dict) -> (str, str, str):
 
     return error, key, secret_key
 
-
 # test the code locally
 # will only be run if called from cli
 if __name__ == "__main__":
@@ -120,6 +117,7 @@ if __name__ == "__main__":
     test_context = {}
     test_res = handler(test_event, test_context)
     print(test_res)
+
     #  pprint(json.loads(test_res["body"]))
     #  print(test_res)
     #  pprint(test_res)
